@@ -23,6 +23,7 @@ set(MAP_CORE_MATH_SOURCES
     core/math/Mat4.h
     core/math/Mat4.cpp
     core/math/Ray.h
+    core/math/RayTriangle.h
     core/math/Rectangle.h
 )
 
@@ -64,6 +65,14 @@ set(MAP_CONTENT_SOURCES
     content/TerrainDataSource.h
     content/TerrainFrameAssembler.h
     content/TerrainFrameAssembler.cpp
+    content/TerrainPicking.h
+    content/TerrainPicking.cpp
+)
+
+# camera：地表相机视图地基（位姿基/射线/地表脚印）。
+set(MAP_CAMERA_SOURCES
+    camera/CameraView.h
+    camera/CameraView.cpp
 )
 
 target_sources(earth_engine_core PRIVATE
@@ -71,4 +80,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_GEODESY_SOURCES}
     ${MAP_TILING_SOURCES}
     ${MAP_CONTENT_SOURCES}
+    ${MAP_CAMERA_SOURCES}
 )

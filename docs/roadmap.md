@@ -139,8 +139,22 @@
   （A+东/南）装配后**跨帧同层共享边 ECEF 逐点重合**、flaky 源缺失瓦跳过、
   确定性。当前 20 套件全绿。
 - **host"地形帧"主链路已闭环**：LOD 选择 → 解码 → 查高 → 无缝网格。
-  下一步：相机模型/拾取（让"地形帧"有真正的视锥/画面输入）、
-  或 Provider+HTTP（引入 curl 依赖）。
+
+### 相机/拾取地基（2026-09-08，固定验收机位的输入侧）
+
+- `camera/CameraView.{h,cpp}`——地表相机视图：位姿基（forward/right/up 施密特正交化，
+  垂直下看 roll 退化有兜底）、NDC→射线（`rayThroughNdc`）、视锥四角射线打椭球 → **地表
+  脚印矩形**（`groundFootprintRadians`，任一角看太空返回 nullopt）——将来视锥驱动瓦片
+  选择与固定机位（M-near/M-mid…）的输入。
+- `core/math/RayTriangle.h`——Möller–Trumbore 双面求交（header-only）。
+- `content/TerrainPicking.{h,cpp}`——射线对装配后地形帧的拾取（全三角形最近命中，
+  面法线外向化）。
+- 单测 +3 套件（test_ray_triangle / test_camera_view / test_terrain_picking）：
+  三角形命中/顶点/边/退化/无背面剔除；相机基正交、脚印含正下点且半宽量级合理、
+  朝天 nullopt；拾取命中 k00 西北角顶点（=网格顶点 0）、朝天 miss、跨 4 帧拾最近帧。
+  当前 23 套件全绿。
+- 下一步：Provider+HTTP（真实 DEM 源；引入 curl 依赖）或先把 CameraView 的脚印
+  接到 TerrainLodSelector 上做视锥驱动选择。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 

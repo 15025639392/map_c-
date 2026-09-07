@@ -48,12 +48,11 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 ## 4. 当前状态（2026-09-08）
 
-- 仓库骨架、构建（host native, cmake+ninja+googletest）、20 个 gtest 套件全绿。
-- 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/Rectangle；Ellipsoid（WGS84 双向转换、法线、地表投影）；
-  Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；Geographic/WebMercator 投影；
-  瓦片键/四叉树 + WebMercatorTileScheme + SSE；高度图编解码 + 规则网格采样 +
-  HeightmapTile（mercator 米映射查高）+ TerrainTileMesh（ECEF 网格，同层邻瓦共享边
-  逐点重合）+ TerrainLodSelector（SSE 四叉树选择）+ **TerrainDataSource/TerrainFrameAssembler
-  （host"地形帧"主链路闭环：选择→解码→查高→无缝网格）**。
-- 未开始：相机模型/拾取、Provider+HTTP、渲染抽象；地形判据仍全部 ❌
-  （见 terrain.md 跟踪表——✅ 需本仓自证，观感类待上屏）。
+- 仓库骨架、构建（host native, cmake+ninja+googletest）、23 个 gtest 套件全绿。
+- 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/RayTriangle/Rectangle；Ellipsoid（WGS84 双向转换、
+  法线、地表投影）；Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；
+  Geographic/WebMercator 投影；瓦片键/四叉树 + WebMercatorTileScheme + SSE；
+  高度图编解码 + 规则网格采样 + HeightmapTile + TerrainTileMesh + TerrainLodSelector +
+  TerrainDataSource/TerrainFrameAssembler（host 地形帧主链路）；
+  **CameraView（位姿基/NDC 射线/地表脚印）+ TerrainPicking（射线拾取地形）**。
+- 未开始：Provider+HTTP、渲染抽象；地形判据仍全部 ❌（见 terrain.md 跟踪表）。
