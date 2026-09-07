@@ -14,6 +14,15 @@ struct TerrainGrid {
     int width = 0;
     int height = 0;
 
+    /// 本瓦 no-data 哨兵值列表（米，精确匹配；空 = 无哨兵，行为与旧版一致）。
+    /// 解码源按编码填写（镜像 gis-md 解码 worker 语义）：
+    /// - Terrain-RGB 源**隐式注册** RGB(0,0,0) 的解码底值
+    ///   `HeightmapCodec::kTerrainRgbNoDataFloorMeters`（-10000）；
+    /// - Terrarium 源无隐式哨兵（Mapzen 未定义 nodata 像素，-32768 是合法底值）。
+    /// 下游（HeightmapTile 的 min/max 与采样）遇到哨兵时排除，防止 -10000 混进
+    /// min/max 或边缘双线性（gis-md 根因档案：假深沟/假悬崖法线）。
+    std::vector<double> noDataValues;
+
     bool empty() const { return heights.empty() || width <= 0 || height <= 0; }
     int count() const { return width * height; }
 };

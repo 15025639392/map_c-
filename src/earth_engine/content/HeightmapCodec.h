@@ -15,6 +15,15 @@ namespace earth_engine {
 ///   范围 [-32768, +32767.996] m，量化步长 ~0.0039 m。OpenTopoData 等用它。
 class HeightmapCodec {
 public:
+    /// Terrain-RGB 的 nodata 底值（米）：RGB(0,0,0) 的解码结果。数据空洞与
+    /// 缺邻居的重叠环常编成它。解码栅格把它注册进 noData 哨兵后，min/max 与
+    /// 采样须排除，否则 -10000 会被当合法高度混进边缘双线性，造成 km 级假深沟
+    /// 与假悬崖法线（瓦界光照条带）。
+    /// **哨兵单一来源**：镜像 gis-md `HeightmapTerrainProvider::
+    /// kTerrainRgbNoDataFloorMeters` 的纪律——注册点与下游判据共用此常量，
+    /// 勿各自写字面量。
+    static constexpr double kTerrainRgbNoDataFloorMeters = -10000.0;
+
     // ---- 单像素 ----
     static double decodeTerrainRgbPixel(uint8_t r, uint8_t g, uint8_t b);
     static double decodeTerrariumPixel(uint8_t r, uint8_t g, uint8_t b);

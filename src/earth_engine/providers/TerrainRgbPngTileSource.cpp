@@ -29,6 +29,8 @@ std::optional<TerrainGrid> TerrainRgbPngTileSource::requestHeights(
                                           grid.heights.data())) {
         return std::nullopt;
     }
+    // Terrain-RGB 隐式注册 nodata 哨兵（同 TerrainRgbTileSource；见其注释）。
+    grid.noDataValues.push_back(HeightmapCodec::kTerrainRgbNoDataFloorMeters);
     return grid;
 }
 

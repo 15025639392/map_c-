@@ -14,7 +14,9 @@ std::vector<TerrainFrameAssembler::Frame> TerrainFrameAssembler::assemble(
         if (!grid || grid->empty() || grid->width != gridSize || grid->height != gridSize) {
             continue; // 数据不可用/畸形：跳过（祖先回退属调度阶段）
         }
-        const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height);
+        const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height,
+                                 grid->noDataValues.data(),
+                                 static_cast<int>(grid->noDataValues.size()));
         Frame frame;
         frame.key = key;
         frame.mesh = meshBuilder.build(tile, ellipsoid, nodesPerEdge);

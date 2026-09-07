@@ -30,6 +30,10 @@ std::optional<TerrainGrid> TerrainRgbTileSource::requestHeights(
                                           grid.heights.data())) {
         return std::nullopt;
     }
+    // Terrain-RGB 隐式注册 nodata 哨兵：RGB(0,0,0) 解码恰为 -10000m = 数据空洞/
+    // 缺邻居重叠环的底值（镜像 gis-md decodeTile 的隐式注册）。不注册则 -10000
+    // 被当合法高度混进 min/max 与边缘双线性 → km 级假深沟 + 假悬崖法线。
+    grid.noDataValues.push_back(HeightmapCodec::kTerrainRgbNoDataFloorMeters);
     return grid;
 }
 

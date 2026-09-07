@@ -25,7 +25,10 @@ TerrainMeshData TerrainTileMeshBuilder::build(const HeightmapTile& tile,
     mesh.positionsEcef.reserve(static_cast<size_t>(vertexCount));
     mesh.normals.resize(static_cast<size_t>(vertexCount), Vec3::zero());
 
-    const HeightmapSampler sampler(tile.heights(), width, height);
+    // 节点采样带瓦哨兵表：节点窗若压到 no-data 像素（数据空洞/重叠环），只对
+    // 有效角归一化，避免网格向 -10000 底值沉出假深沟（并入 gis-md 语义，B1）。
+    const HeightmapSampler sampler(tile.heights(), width, height, tile.noDataValues(),
+                                   tile.noDataCount());
 
     for (int row = 0; row < stride; ++row) {
         for (int col = 0; col < stride; ++col) {
