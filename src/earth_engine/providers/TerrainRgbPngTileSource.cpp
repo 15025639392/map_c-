@@ -1,5 +1,7 @@
 #include "earth_engine/providers/TerrainRgbPngTileSource.h"
 
+#include "earth_engine/providers/ImageTileBodyCheck.h"
+
 namespace earth_engine {
 
 TerrainRgbPngTileSource::TerrainRgbPngTileSource(const ITileBytesSource& bytesSource,
@@ -14,6 +16,11 @@ std::optional<TerrainGrid> TerrainRgbPngTileSource::requestHeights(
     const std::string url = TileUrlFormatter::format(urlTemplate_, key);
     const std::optional<std::vector<uint8_t>> bytes = bytesSource_.requestTileBytes(key, url);
     if (!bytes) {
+        return std::nullopt;
+    }
+    // 网络硬化：魔数白名单（PNG/JPEG/WebP）把 CDN 200 错误体（NoSuchKey XML 等）
+    // 挡在 PNG 解码之前——语义转写 gis-md ImageTileBodyCheck，见该头文件注释。
+    if (!looksLikeImageTileBody(*bytes)) {
         return std::nullopt;
     }
     const std::optional<RgbImage> image = decodePngToRgb(bytes->data(), bytes->size());
