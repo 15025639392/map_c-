@@ -72,8 +72,8 @@
 `geodesy/`：cartographic、ellipsoid、projection、quadtree_geometric_error、ray_ellipsoid、transforms；
 `tiling/`：tile_key、tile_scheme、terrain_lod_selector；
 `content/`：heightmap_codec、heightmap_sampler、heightmap_tile、terrain_tile_mesh、
-terrain_frame_assembler、ancestor_fallback（祖先回退/调度-lite）、seam_audit、
-ring_source_seam（B2 环源闭合）、cross_level_tvertex（B4 T-顶点取证）、
+terrain_frame_assembler、ancestor_fallback（祖先回退/调度-lite）、decorator_composition（回退×EGM96 组合）、
+seam_audit、ring_source_seam（B2 环源闭合）、cross_level_tvertex（B4 T-顶点取证）、
 terrain_cross_level、terrain_picking、
 terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
