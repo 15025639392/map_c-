@@ -65,6 +65,18 @@ Java_com_mapcplus_terrain_NativeRenderer_nativeSetAssetManager(JNIEnv* env, jcla
     gScene.setAssetManager(AAssetManager_fromJava(env, assetManager));
 }
 
+extern "C" JNIEXPORT jboolean JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeNavEnabled(JNIEnv*, jclass) {
+    return gScene.navEnabled() ? JNI_TRUE : JNI_FALSE;
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeNavGesture(JNIEnv*, jclass, jdouble dxPx,
+                                                          jdouble dyPx, jdouble pinchScale) {
+    gScene.navGesture(static_cast<double>(dxPx), static_cast<double>(dyPx),
+                      static_cast<double>(pinchScale));
+}
+
 namespace demoscene {
 
 std::optional<std::vector<uint8_t>> httpGetBytes(const std::string& url) {

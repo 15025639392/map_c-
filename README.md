@@ -47,9 +47,11 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**54 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54）。
-地形链路 44 + L1/L2 系列：缓存×2/退化链与瓦源装配（含 keepAlpha）/相机运动族/渲染抽象
-（IRenderDevice 纹理+UV+DrawList 设备验证）/PngToRgba8/RGBA alpha。真实内容三层同屏：
+**57 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54；此后 L2/L3 续增
+至 57——渲染抽象/位移属性通道/引擎相机制各+1 批）。
+地形链路 44 + L1/L2/L3 系列：缓存×2/退化链与瓦源装配（含 keepAlpha）/相机运动族/引擎相机制
+（MapCameraSystem：惯性/贴地防护/flyTo，host 10 用例）/渲染抽象（IRenderDevice 纹理+UV+DrawList
+设备验证）/PngToRgba8/RGBA alpha。真实内容三层同屏：
 NASA DEM 高度 + 高德卫星（style=6）+ 路网注记（style=8），图层开关 img/lbl。
 host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
@@ -90,6 +92,12 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   vs `docs/assets/baked0_station2.png`（M-mid z12 42 瓦：Δpx≈0.003%、glErr=0x0）、
   `disp1_station1.png` vs `baked0_station1.png`（M-near z12 2 瓦：Δpx 10≈0.0004%）——
   属性通道位移与 baked 逐像素一致。
+- 引擎相机制（L3）：`debug.mapc.nav`（1=手势走引擎 MapCameraSystem：惯性滑行/贴地防护/flyTo，
+  重启生效；0=默认 Java 直连基线，像素不变）——`src/earth_engine/camera/MapCameraSystem.{h,cpp}`
+  host 语义（10 用例，57/57）。设备证据 logcat `nav pose` + 截图 `docs/assets/nav1_*.png`
+  （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住）。
+- 飞行（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`（lon,lat,alt,
+  pitch,heading；改值重触发；目标高度低于地表会被贴地抬升到净空之上）。
 - 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
 - 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。
 - ASCII 缩略证据包：`docs/assets/evidence.md`（文本环境快速预览五机位）。

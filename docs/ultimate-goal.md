@@ -38,7 +38,12 @@
   模板 + 逐瓦位移 attribute（aDisp，`p=aPos+aDisp`）模拟器上屏，几何与 baked 逐像素一致
   （截图 disp1/baked0_station2，Δpx≈0.003%，glErr=0）；共享模板高度纹理驱动位移（无逐瓦
   位移属性）仍受模拟器 GLES vertex 纹理采样限制 → 真机路线开放项。
-- **L3**：影像真实源 + 图层栈 + 矢量贴地/样式 + 相机导航成熟化（惯性/flyTo/防穿地/手势层）。
+- **L3（当前）**：影像真实源（高德卫星+注记，前段已落）→ **相机导航成熟化 slice A ✅**：
+  引擎层相机制 **MapCameraSystem**（turret 语义；手势→速率→惯性→贴地防护→flyTo 目标贴地抬升；
+  host 57 套件含 10 用例）落地 + demo 手势层接线（`debug.mapc.nav`=1：Java 只送屏幕增量，
+  引擎每帧步进回灌；`debug.mapc.flyto` 触发飞行）。设备证据：惯性滑行/贴地 clamp（flyTo 10m→
+  抬至 ground+5=237m）/nav=0 基线像素不变（Δpx=0），截图 `docs/assets/nav1_*.png`。
+  剩余：中心平移(pan) → 手势识别器抽象(interaction/) → 图层栈 S3 化 → 矢量贴地/样式。
 - **L4**：光照/大气/颜色、时间动画接换代过渡、格式与 3D Tiles、交互系统化。
 - **L5（远期）**：天气/环境；roadmap 7–10（绘制/测量、性能离线工程化、真机预算账）。
 

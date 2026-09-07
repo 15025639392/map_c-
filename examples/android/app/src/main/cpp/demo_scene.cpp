@@ -7,18 +7,23 @@
 
 #include <android/log.h>
 #include <sys/system_properties.h>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <functional>
+#include <mutex>
 #include <optional>
 #include <vector>
 
 #include <earth_engine/camera/CameraView.h>
 #include <earth_engine/camera/Frustum.h>
+#include <earth_engine/camera/MapCameraSystem.h>
 #include <earth_engine/core/geodesy/Transforms.h>
 #include <earth_engine/content/HeightmapTile.h>
+#include <earth_engine/content/HeightmapSampler.h>
 #include <earth_engine/imagery/ImageryTileSource.h>
 #include <earth_engine/renderer/HeightTextureCodec.h>
 #include <earth_engine/content/TerrainDataSource.h>
@@ -241,11 +246,27 @@ void TerrainScene::initializeGl() {
     useLbl_ = (__system_property_get("debug.mapc.lbl", lblProp) <= 0) || (lblProp[0] == '1');
     char hgtProp[PROP_VALUE_MAX] = {0};
     char dispProp[PROP_VALUE_MAX] = {0};
+    char navProp[PROP_VALUE_MAX] = {0};
     useHgt_ = (__system_property_get("debug.mapc.hgt", hgtProp) > 0) && (hgtProp[0] == '1');
     useDisp_ = (__system_property_get("debug.mapc.disp", dispProp) > 0) && (dispProp[0] == '1');
-    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d disp=%d", useDem_ ? 1 : 0,
+    navEnabled_ = (__system_property_get("debug.mapc.nav", navProp) > 0) && (navProp[0] == '1');
+    if (navEnabled_) {
+        // L3：引擎层相机制（turret 语义）——默认俯仰界收紧到掠视下限 2°（对齐旧手势），
+        // 贴地净空 5 m；位姿 = 当前活动相机；地面查高腿 = 本平台瓦栅格缓存。
+        MapCameraSystem::Params p;
+        p.motion.minPitchRad = degreesToRadians(2.0);
+        p.motion.maxPitchRad = degreesToRadians(88.0);
+        p.minClearanceMeters = 5.0;
+        p.minAltitudeMeters = 30.0;
+        navCam_ = MapCameraSystem(p);
+        navCam_.setGroundFn([this](const Cartographic& c) {
+            return guardGroundHeightRad(c.longitude(), c.latitude());
+        });
+        navLastStepMs_ = 0.0;
+    }
+    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d disp=%d nav=%d", useDem_ ? 1 : 0,
          assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0,
-         useHgt_ ? 1 : 0, useDisp_ ? 1 : 0);
+         useHgt_ ? 1 : 0, useDisp_ ? 1 : 0, navEnabled_ ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -287,6 +308,34 @@ void TerrainScene::resize(int widthPx, int heightPx) {
 }
 
 void TerrainScene::drawFrame() {
+    if (navEnabled_) {
+        // L3 观感/验证入口：debug.mapc.flyto="lon,lat,alt,pit,hdg" → 引擎 flyTo 一次
+        // （改值重触发；引擎语义：目标高度先贴地抬升 → 飞行不穿地）。
+        if (frameCount_ > 3 && (frameCount_ % 30) == 1) {
+            char flyProp[PROP_VALUE_MAX] = {0};
+            if (__system_property_get("debug.mapc.flyto", flyProp) > 0 && flyProp[0] != '\0') {
+                if (flyProp_ != flyProp) {
+                    flyProp_ = flyProp;
+                    double lon = 0.0, lat = 0.0, alt = 0.0, pit = 0.0, hdg = 0.0;
+                    if (std::sscanf(flyProp, "%lf,%lf,%lf,%lf,%lf", &lon, &lat, &alt, &pit,
+                                    &hdg) == 5) {
+                        MapCameraSystem::Pose t;
+                        t.lonRad = degreesToRadians(lon);
+                        t.latRad = degreesToRadians(lat);
+                        t.altitudeMeters = alt;
+                        t.pitchRad = degreesToRadians(pit);
+                        t.headingRad = degreesToRadians(hdg);
+                        navCam_.flyTo(t);
+                        ALOG("nav flyTo lon=%.4f lat=%.4f alt=%.0f pit=%.1f hdg=%.1f", lon, lat,
+                             alt, pit, hdg);
+                    }
+                }
+            } else {
+                flyProp_.clear();
+            }
+        }
+        navStep(); // L3：手势/flyTo → 引擎 MapCameraSystem.step → 位姿回灌
+    }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     ++frameCount_;
     if (!geometryReady_) {
@@ -398,6 +447,122 @@ void TerrainScene::setCamera(double lonDeg, double latDeg, double altMeters,
 
 void TerrainScene::setAssetManager(AAssetManager* manager) { assetManager_ = manager; }
 
+// ---------------------------------------------------------------------------
+// L3 相机导航（debug.mapc.nav=1）：Java 只送屏幕手势增量，每 GL 帧 drain 给
+// **引擎层 MapCameraSystem**（host 语义：GestureToMotion 速率映射 → CameraMotion
+// 惯性/阻尼 → TerrainGroundGuard 贴地防护 → flyTo），步进后把引擎位姿回灌场景。
+// 引擎 turret 语义与本场景相机参数化逐字段一致 → 手势只改俯仰/航向/高度（中心经纬
+// 不动）；nav=0 直连路径（基线）完全不变。中心平移与 orbit（CameraNavController）
+// 属后续轮（见 system-gap-audit S6 状态）。
+// ---------------------------------------------------------------------------
+void TerrainScene::navGesture(double dxPx, double dyPx, double pinchScale) {
+    if (!navEnabled_) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(navMutex_);
+    navDxPx_ += dxPx;
+    navDyPx_ += dyPx;
+    if (pinchScale > 0.0) {
+        navScale_ *= pinchScale;
+    }
+    navHasInput_ = true;
+}
+
+std::optional<double> TerrainScene::guardGroundHeightRad(double lonRad, double latRad) {
+    const Cartographic c(lonRad, latRad, 0.0);
+    if (!useDem_) {
+        // 合成高度源：与装配同一函数直接求值（零网络/零瓦依赖）。
+        return hillFn(c);
+    }
+    // 数据源判定同 ensureGeometry（未设或非 'a' → NASA 网络源）。
+    char srcProp[PROP_VALUE_MAX] = {0};
+    const bool nasa = (__system_property_get("debug.mapc.src", srcProp) <= 0) ||
+                      (srcProp[0] != 'a');
+    guardLevel_ = nasa ? 12 : 13; // 相机正下中心经纬固定 → 该层瓦缓存命中（单次取）
+    const WebMercatorTileScheme scheme;
+    const std::optional<TileKey> key = scheme.tileKeyForCartographic(c, guardLevel_);
+    if (!key.has_value()) {
+        return std::nullopt;
+    }
+    if (!guardKey_.has_value() || guardKey_.value() != key.value() || guardGrid_.empty()) {
+        std::optional<TerrainGrid> grid;
+        if (nasa) {
+            NasaRingDemSource ring;
+            grid = ring.source.requestHeights(scheme, key.value(), 512);
+        } else {
+            DemAssetSource dem(assetManager_);
+            grid = dem.requestHeights(scheme, key.value(), 256);
+        }
+        if (!grid.has_value() || grid->empty()) {
+            return std::nullopt;
+        }
+        guardKey_ = key.value();
+        guardGrid_ = std::move(grid.value());
+    }
+    HeightmapTile tile(scheme, guardKey_.value(), guardGrid_.heights.data(), guardGrid_.width,
+                       guardGrid_.height,
+                       guardGrid_.noDataValues.empty() ? nullptr
+                                                        : guardGrid_.noDataValues.data(),
+                       static_cast<int>(guardGrid_.noDataValues.size()), guardGrid_.borderInset);
+    return tile.sampleHeightAt(c);
+}
+
+void TerrainScene::navStep() {
+    const double nowMs = std::chrono::duration<double, std::milli>(
+                             std::chrono::steady_clock::now().time_since_epoch()).count();
+    if (navLastStepMs_ <= 0.0) {
+        navLastStepMs_ = nowMs;
+        return;
+    }
+    const double dt = std::max(0.0, (nowMs - navLastStepMs_) / 1000.0);
+    navLastStepMs_ = nowMs;
+    if (dt <= 0.0) {
+        return;
+    }
+
+    double dx = 0.0, dy = 0.0, scale = 1.0;
+    bool hasInput = false;
+    {
+        std::lock_guard<std::mutex> lock(navMutex_);
+        hasInput = navHasInput_;
+        dx = navDxPx_;
+        dy = navDyPx_;
+        scale = navScale_;
+        navDxPx_ = 0.0;
+        navDyPx_ = 0.0;
+        navScale_ = 1.0;
+        navHasInput_ = false;
+    }
+    if (!hasInput && navCam_.isSettled()) {
+        return; // 收敛静止且无输入：零开销（几何不失效）
+    }
+    if (hasInput) {
+        navCam_.setGesture(dx, dy, scale,
+                           static_cast<double>(std::min(width_, height_)));
+    }
+    navCam_.step(dt); // 引擎步进：手势→速率 / 惯性衰减→积分→贴地 clamp（内部 dt 上限）
+
+    const MapCameraSystem::Pose pose = navCam_.pose();
+    const double headingDeg = radiansToDegrees(pose.headingRad);
+    const double pitchDeg = radiansToDegrees(pose.pitchRad);
+    const double altMeters = pose.altitudeMeters;
+    const bool changed = std::fabs(headingDeg - camHeadingDeg_) > 0.02 ||
+                         std::fabs(pitchDeg - camPitchDeg_) > 0.02 ||
+                         std::fabs(altMeters - camAltMeters_) >
+                             std::max(1.0, camAltMeters_ * 0.002);
+    if (changed) {
+        camHeadingDeg_ = headingDeg;
+        camPitchDeg_ = pitchDeg;
+        camAltMeters_ = altMeters;
+        cameraUserSet_ = true;
+        geometryReady_ = false; // RTC 网格随相机位姿重传
+    }
+    if (frameCount_ % 15 == 0) {
+        ALOG("nav pose yaw=%.1f pit=%.1f alt=%.0f fly=%d settled=%d", headingDeg, pitchDeg,
+             altMeters, navCam_.flying() ? 1 : 0, navCam_.isSettled() ? 1 : 0);
+    }
+}
+
 void TerrainScene::ensureGeometry() {
     const Ellipsoid& e = Ellipsoid::WGS84();
     const Cartographic center = Cartographic::fromDegrees(camLonDeg_, camLatDeg_, 0.0);
@@ -463,6 +628,16 @@ void TerrainScene::ensureGeometry() {
             camHeadingDeg_ = hdgDeg = 20.0;
             lod.maxScreenSpaceErrorPx = 12.0;
             break;
+        }
+        // L3：station 预设（首次相机）落定后同步进引擎相机制（此后手势经引擎步进）。
+        if (navEnabled_) {
+            MapCameraSystem::Pose p;
+            p.lonRad = center.longitude();
+            p.latRad = center.latitude();
+            p.altitudeMeters = altMeters;
+            p.headingRad = degreesToRadians(hdgDeg);
+            p.pitchRad = degreesToRadians(pitchDeg);
+            navCam_.setPose(p);
         }
     }
     cameraPosCache_ = e.cartographicToCartesian(

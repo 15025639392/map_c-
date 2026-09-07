@@ -96,6 +96,8 @@ set(MAP_CAMERA_SOURCES
     camera/CameraNavController.cpp
     camera/GestureToMotion.h
     camera/GestureToMotion.cpp
+    camera/MapCameraSystem.h
+    camera/MapCameraSystem.cpp
 )
 
 # providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。

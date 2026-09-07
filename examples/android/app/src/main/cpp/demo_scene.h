@@ -3,14 +3,23 @@
 #include <android/asset_manager.h>
 
 #include <memory>
+#include <mutex>
+#include <optional>
+#include <string>
 
+#include <earth_engine/camera/MapCameraSystem.h>
 #include <earth_engine/core/math/Vec3.h>
+#include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/renderer/IRenderDevice.h>
 
 namespace demoscene {
 
 /// A2/A3 场景：相机 → core 管线（选择/解码/网格）→ IRenderDevice(GLES3) 渲染。
 /// 相机初始 = station 预设（debug.mapc.station 1..5），Java 手势可改写。
+/// L3：相机位姿一律由**引擎层 MapCameraSystem** 持有（本类只做平台数据腿/渲染消费）：
+/// - nav=0（默认）：Java 手势绝对位姿 → setCamera → 引擎 setPose（基线路径不动）；
+/// - nav=1（debug.mapc.nav）：Java 只送屏幕手势增量，引擎做惯性/贴地防护/flyTo，
+///   每帧把引擎位姿回灌场景（turret 语义：正下中心经纬 + 高度 + heading/pitch）。
 class TerrainScene {
 public:
     void initializeGl();
@@ -20,9 +29,15 @@ public:
     void setAssetManager(AAssetManager* manager);
     void drawFrame();
 
+    /// L3 导航（debug.mapc.nav=1）：手势增量输入（Java 手势线程调用；GL 线程消费）。
+    void navGesture(double dxPx, double dyPx, double pinchScale);
+    bool navEnabled() const { return navEnabled_; }
+
 private:
     void ensureGeometry();   // 相机→选择→装配，并把网格上传 GPU
     void destroyGlObjects();
+    void navStep();          // GL 帧：drain 手势 → 引擎 MapCameraSystem.step → 回灌位姿
+    std::optional<double> guardGroundHeightRad(double lonRad, double latRad);
 
     std::unique_ptr<earth_engine::render::IRenderDevice> device_;
     uint32_t programHandle_ = 0;
@@ -45,7 +60,7 @@ private:
     earth_engine::Vec3 cameraTargetCache_;
     earth_engine::Vec3 cameraUpCache_;
 
-    // 活动相机（station 预设为初值；手势改）
+    // 活动相机（station 预设为初值；手势改）——与引擎 MapCameraSystem 位姿同步。
     double camLonDeg_ = 106.44;
     double camLatDeg_ = 29.70;
     double camAltMeters_ = 15000.0;
@@ -59,6 +74,21 @@ private:
     bool useDisp_ = false; // debug.mapc.disp=1 → 基准模板+位移向量属性（GPU 顶点位移）
     AAssetManager* assetManager_ = nullptr;
     double lastKey_[5] = {0, 0, 0, 0, 0};
+
+    // L3 导航（引擎 MapCameraSystem；默认关 → 基线手势直连不变）。
+    bool navEnabled_ = false;
+    earth_engine::MapCameraSystem navCam_;
+    std::mutex navMutex_;
+    double navDxPx_ = 0.0;
+    double navDyPx_ = 0.0;
+    double navScale_ = 1.0;
+    bool navHasInput_ = false;
+    double navLastStepMs_ = 0.0;
+    std::string flyProp_; // debug.mapc.flyto="lon,lat,alt,pit,hdg" 触发一次引擎 flyTo
+    // 贴地防护查高缓存：相机正下（中心经纬固定）所在瓦的栅格。
+    std::optional<earth_engine::TileKey> guardKey_;
+    earth_engine::TerrainGrid guardGrid_;
+    int guardLevel_ = 12;
 };
 
 } // namespace demoscene
