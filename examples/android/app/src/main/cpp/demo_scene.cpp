@@ -223,7 +223,12 @@ void TerrainScene::initializeGl() {
     } else {
         useDem_ = (demProp[0] == '1');
     }
-    ALOG("dem mode=%d (assetMgr=%d)", useDem_ ? 1 : 0, assetManager_ != nullptr ? 1 : 0);
+    char imgProp[PROP_VALUE_MAX] = {0};
+    char lblProp[PROP_VALUE_MAX] = {0};
+    useImg_ = (__system_property_get("debug.mapc.img", imgProp) <= 0) || (imgProp[0] == '1');
+    useLbl_ = (__system_property_get("debug.mapc.lbl", lblProp) <= 0) || (lblProp[0] == '1');
+    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d", useDem_ ? 1 : 0,
+         assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -483,6 +488,7 @@ void TerrainScene::ensureGeometry() {
                 "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}";
             ImageryTileSource imagery(amapCache, amapUrl,
                                       [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; });
+            const bool wantImg = useImg_;
             // 路网注记层：style=8 RGBA PNG（alpha 合成；同瓦同缓存）。
             TileCacheBytesSource lblCache(amapRaw, 512);
             const char* amapLabelUrl =
@@ -512,12 +518,17 @@ void TerrainScene::ensureGeometry() {
                 if (th == 0u) {
                     ALOG("imagery texture miss tile %s", f.key.toString().c_str());
                 }
-                tileTextures_.push_back(th);
-                // 路网注记（alpha 保留；缺失 → 0，标注关闭）。
-                const auto lr = labelImagery.fetchTexture(f.key);
+                tileTextures_.push_back(wantImg ? th : 0u);
+                // 路网注记（alpha 保留；缺失或关层 → 0）。
+                const auto lr =
+                    (useImg_ && useLbl_) ? labelImagery.fetchTexture(f.key)
+                                         : std::optional<ImageryTileSource::Result>();
                 labelTextures_.push_back(lr.has_value()
                                              ? device_->createTexture2D(lr->texture)
                                              : 0u);
+                if (!wantImg && th != 0u) { // 关影像层仍释放已建纹理
+                    device_->releaseTexture(th);
+                }
             }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
