@@ -69,10 +69,12 @@ set(MAP_CONTENT_SOURCES
     content/TerrainPicking.cpp
 )
 
-# camera：地表相机视图地基（位姿基/射线/地表脚印）。
+# camera：地表相机视图地基（位姿基/射线/地表脚印/地形帧管线）。
 set(MAP_CAMERA_SOURCES
     camera/CameraView.h
     camera/CameraView.cpp
+    camera/TerrainCameraPipeline.h
+    camera/TerrainCameraPipeline.cpp
 )
 
 target_sources(earth_engine_core PRIVATE

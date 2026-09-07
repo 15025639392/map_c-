@@ -153,8 +153,20 @@
   三角形命中/顶点/边/退化/无背面剔除；相机基正交、脚印含正下点且半宽量级合理、
   朝天 nullopt；拾取命中 k00 西北角顶点（=网格顶点 0）、朝天 miss、跨 4 帧拾最近帧。
   当前 23 套件全绿。
-- 下一步：Provider+HTTP（真实 DEM 源；引入 curl 依赖）或先把 CameraView 的脚印
-  接到 TerrainLodSelector 上做视锥驱动选择。
+### 相机→地形帧端到端 + 跨层级边界（2026-09-08）
+
+- `camera/TerrainCameraPipeline.{h,cpp}`——一步管线：相机地表脚印 → LOD 选择 →
+  数据源解码 → ECEF 地形帧（`assembleTerrainFrameForCamera`）。host 侧
+  "一帧 = 相机 → 地形瓦片"成形。
+- 单测 +2 套件（test_terrain_camera_pipeline / test_terrain_cross_level）：
+  - 端到端：俯瞰 12km 相机出帧、正下方点被覆盖、屏幕中心射线拾取到地形（海拔在
+    函数值域）、朝天相机空帧；
+  - **跨层级边界**（T-V5 另一半）：粗瓦 A(z) 与东邻 B(z) 的北/南半区子瓦（z+1）
+    共享物理边界——偶数行**共享网格点 ECEF 逐点重合**（±1e-6 m）；子瓦奇数行是
+    T 顶点（不同细分的自然结果，注明归 stage-6 remap 域处理）；父瓦中心 =
+    四子瓦共同角点。
+  当前 25 套件全绿。
+- 下一步：Provider+HTTP（真实 DEM；引入 curl 依赖）或为拾取/选择加视锥精确剪枝。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
