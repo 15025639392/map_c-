@@ -25,6 +25,7 @@ set(MAP_CORE_MATH_SOURCES
     core/math/Ray.h
     core/math/RayTriangle.h
     core/math/Rectangle.h
+    core/math/Plane.h
 )
 
 set(MAP_CORE_GEODESY_SOURCES
@@ -77,6 +78,8 @@ set(MAP_CAMERA_SOURCES
     camera/CameraView.cpp
     camera/TerrainCameraPipeline.h
     camera/TerrainCameraPipeline.cpp
+    camera/Frustum.h
+    camera/Frustum.cpp
 )
 
 # providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。

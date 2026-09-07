@@ -220,6 +220,14 @@
 - 单测 +1 套件（test_terrain_frame_cache）：同相机 update 零重取且数据源计数与报告
   一致、小移动有复用且请求数 < 帧数、跨半球大跳全刷+淘汰、帧排序稳定。31 套件全绿。
 
+### Plane/Frustum（2026-09-08，渲染抽象前件）
+
+- `core/math/Plane.h`——平面（单位法线 + 偏移；点/球内测的地基）。
+- `camera/Frustum.{h,cpp}`——由 CameraView 位姿基构造无穷远视锥（四侧平面，法线向外，
+  可选近平面）：containsPoint / intersectsSphere（侧平面分离判据）。剔除/调度复用。
+- 单测 +1 套件（test_frustum）：简单笛卡尔几何（fov90/aspect1 的半宽=深度）、
+  近平面背后剔除、ECEF 相机下目标区在内/地球对侧在外。32 套件全绿。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：
