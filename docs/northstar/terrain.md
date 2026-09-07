@@ -98,6 +98,25 @@
 | M-high | 60000 m | −30° | 30 瓦 / 65340 | 594 |
 | M-coarse | 250 km | −20° | 48 瓦 / 104544 | 536 |
 
+### NASA Terrain-RGB 514 网络源固定机位截图集（2026-09-09）
+
+demo 默认数据源切到用户指定网络源 `https://mapoverlay.xinzhi.space/3dterrain/nasa/tiles/
+{z}/{x}/{y}.png`（Mapbox 标准 514×514 = 512 cell + 1px 裙边环，覆盖 z6–12；近景受
+z12 上限约束，M-near/M-mid/M-graze 同取 L12、M-high/M-coarse 取 L10）。
+`docs/assets/nasa_station{1..5}_{Mnear,Mmid,Mgraze,Mhigh,Mcoarse}.png`（真实公网取数，
+模拟器截图；distinct/非天空为机读代理，观感归用户）：
+
+| 机位 | 分带 | 瓦/顶点（logcat） | distinct | 非天空 |
+|---|---|---|---|---|
+| M-near | L12 | 2 / 8712（65 段） | 350 | 45.1% |
+| M-mid | L12 | 42 / 182952（65 段） | 877 | 45.1% |
+| M-graze | L12（foot=0 兜底矩形） | 72 / 313632（65 段） | 852 | 22.5%（掠视透天） |
+| M-high | L10 | 110 / 127160（33 段） | 863 | 45.1% |
+| M-coarse | L10 | 323 / 373388（33 段） | 1236 | 45.1% |
+
+取数耗时随瓦数线性（M-coarse 323 瓦 ≈ 40s）；assets 离线兜底：
+`setprop debug.mapc.src asset`（assets 截图集见上表 station1..5）。
+
 ## 本仓 host 机制证据（2026-09-08 起随轮次累积）
 
 > 判据表状态**未因此改动**（❌→✅ 需要整链/观感自证）；这里只登记**机制级子主张**的
