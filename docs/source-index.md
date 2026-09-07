@@ -60,6 +60,7 @@
 | CameraView（位姿基 / rayThroughNdc / groundFootprintRadians） | camera/CameraView.{h,cpp} |
 | CameraMotion（惯性衰减/flyTo 运动模型，S6） | camera/CameraMotion.{h,cpp} |
 | TerrainGroundGuard（贴地防护/不穿地策略，S6） | camera/TerrainGroundGuard.{h,cpp} |
+| CameraNavController（惯性×贴地联动控制器，S6） | camera/CameraNavController.{h,cpp} |
 | Frustum（fromCamera / containsPoint / intersectsSphere） | camera/Frustum.{h,cpp} |
 | assembleTerrainFrameForCamera / TerrainCameraPipelineConfig | camera/TerrainCameraPipeline.{h,cpp} |
 
@@ -87,7 +88,8 @@ seam_audit、ring_source_seam（B2 环源闭合）、cross_level_tvertex（B4 T-
 terrain_cross_level、terrain_picking、
 terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
-`camera/`：camera_view、camera_motion、terrain_ground_guard、frustum、terrain_camera_pipeline；
+`camera/`：camera_view、camera_motion、terrain_ground_guard、camera_nav_controller、frustum、
+terrain_camera_pipeline；
 `providers/`：tile_url_formatter、tile_cache、disk_tile_cache、terrain_rgb_source、png_terrain_source、
 nasa_ring_source（NASA 514 带环源 + MAPC_LIVE_NET 真实端点）、http_bytes_source、
 terrarium_asset_decode（真实资产字节回归）。

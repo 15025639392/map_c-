@@ -92,6 +92,8 @@ set(MAP_CAMERA_SOURCES
     camera/CameraMotion.cpp
     camera/TerrainGroundGuard.h
     camera/TerrainGroundGuard.cpp
+    camera/CameraNavController.h
+    camera/CameraNavController.cpp
 )
 
 # providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。
