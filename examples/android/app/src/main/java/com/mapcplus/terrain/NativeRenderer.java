@@ -10,11 +10,17 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
         System.loadLibrary("terrain_demo");
     }
 
+    /** 由 MainActivity 传入 APK assets（DEM 资产源用）。 */
+    public static void setAssetManager(android.content.res.AssetManager am) {
+        nativeSetAssetManager(am);
+    }
+
     private static native void nativeSurfaceCreated();
     private static native void nativeSurfaceChanged(int w, int h);
     private static native void nativeDrawFrame();
     private static native void nativeSetCamera(double lonDeg, double latDeg, double altMeters,
                                                double pitchDeg, double headingDeg);
+    private static native void nativeSetAssetManager(android.content.res.AssetManager am);
 
     /** Java 手势驱动的相机更新（拖动=俯仰/航向，双指=高度）。 */
     public static void updateCamera(double lonDeg, double latDeg, double altMeters,

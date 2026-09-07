@@ -30,6 +30,10 @@ public:
     /// 返回 false = 参数非法（pixels/outHeights 为空、stride < width*3 等）。
     static bool decodeTerrainRgb(const uint8_t* pixels, size_t width, size_t height,
                                  size_t strideBytes, double* outHeights);
+
+    /// Terrarium 整张行解码（同 decodeTerrainRgb 的布局约定）。
+    static bool decodeTerrarium(const uint8_t* pixels, size_t width, size_t height,
+                                size_t strideBytes, double* outHeights);
 };
 
 } // namespace earth_engine

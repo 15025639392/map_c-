@@ -11,6 +11,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         glView = new GLSurfaceView(this);
+        NativeRenderer.setAssetManager(getAssets());
         // GLES 3 上下文（A2 起地形渲染需要）。
         glView.setEGLContextClientVersion(3);
         glView.setRenderer(new NativeRenderer());

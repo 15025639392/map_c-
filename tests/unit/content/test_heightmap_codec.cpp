@@ -77,6 +77,22 @@ TEST(HeightmapCodec, DecodeBufferWithRowPadding) {
     }
 }
 
+TEST(HeightmapCodec, TerrariumRowDecode) {
+    // 2 行 × 3 列（每像素 RGB，无 padding）。
+    const std::vector<uint8_t> px = {
+        128, 0, 0,    0, 128, 0,    0, 0, 128,   // (128,0,0)=0m; (0,128,0)=-128+? 见下
+        255, 255, 255, 0, 0, 0,     64, 0, 0     // 全 255 ≈ 32767.996; (0,0,0)=-32768
+    };
+    std::vector<double> out(6, 0.0);
+    ASSERT_TRUE(HeightmapCodec::decodeTerrarium(px.data(), 3, 2, 9, out.data()));
+    EXPECT_NEAR(out[0], 0.0, 1.0e-6);                 // (128,0,0): 128*256-32768=0
+    EXPECT_NEAR(out[1], -32640.0, 1.0e-6);           // (0,128,0): +128-32768
+    EXPECT_NEAR(out[2], -32767.5, 1.0e-6);           // (0,0,128): 128/256-32768
+    EXPECT_NEAR(out[3], 32767.99609375, 1.0e-4);      // 全 255
+    EXPECT_NEAR(out[4], -32768.0, 1.0e-9);            // 全 0
+    EXPECT_NEAR(out[5], -16384.0, 1.0e-6);            // (64,0,0): 64*256-32768
+}
+
 TEST(HeightmapCodec, InvalidArguments) {
     double out[4] = {0, 0, 0, 0};
     uint8_t px[12] = {0};

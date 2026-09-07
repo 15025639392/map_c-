@@ -1,5 +1,7 @@
 #include "demo_scene.h"
 
+#include "dem_assets.h"
+
 #include <GLES3/gl3.h>
 
 #include <android/log.h>
@@ -207,6 +209,11 @@ void TerrainScene::initializeGl() {
         }
     }
     ALOG("station=%d", station_);
+    char demProp[PROP_VALUE_MAX] = {0};
+    if (__system_property_get("debug.mapc.dem", demProp) > 0 && demProp[0] == '1') {
+        useDem_ = true;
+    }
+    ALOG("dem mode=%d", useDem_ ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.42f, 0.55f, 0.74f, 1.0f); // 天蓝
@@ -291,6 +298,8 @@ void TerrainScene::setCamera(double lonDeg, double latDeg, double altMeters,
          altMeters, pitchDeg, headingDeg);
 }
 
+void TerrainScene::setAssetManager(AAssetManager* manager) { assetManager_ = manager; }
+
 void TerrainScene::ensureGeometry() {
     const Ellipsoid& e = Ellipsoid::WGS84();
     const Cartographic center = Cartographic::fromDegrees(camLonDeg_, camLatDeg_, 0.0);
@@ -359,24 +368,42 @@ void TerrainScene::ensureGeometry() {
     const Frustum frustum = Frustum::fromCamera(camera, 100.0);
 
     const WebMercatorTileScheme scheme;
-    const FunctionalTerrainSource source;
+    const std::optional<Rectangle> footOpt = camera.groundFootprintRadians(e);
 
-    TerrainLodResult selection;
-    if (const std::optional<Rectangle> foot = camera.groundFootprintRadians(e)) {
-        const TerrainLodSelector selector;
-        selection = selector.selectTiles(scheme, cameraPosCache_, foot.value(), lod, &frustum);
+    std::vector<DemFrame> frames; // key + mesh 的统一帧集合
+    if (useDem_) {
+        if (assetManager_ == nullptr) {
+            ALOGE("dem enabled but no asset manager");
+            return;
+        }
+        DemAssetSource demSource(assetManager_);
+        const int level = bandLevelForAltitudeMeters(camAltMeters_);
+        if (footOpt) {
+            frames = buildDemFrames(scheme, demSource, footOpt.value(), e, level, 33);
+        }
+        ALOG("dem band level=%d tiles=%zu", level, frames.size());
+    } else {
+        const FunctionalTerrainSource source;
+        TerrainLodResult selection;
+        if (footOpt) {
+            const TerrainLodSelector selector;
+            selection =
+                selector.selectTiles(scheme, cameraPosCache_, footOpt.value(), lod, &frustum);
+        }
+        if (selection.tiles.empty()) {
+            // 兜底：放宽阈值重选。
+            TerrainLodConfig wide = lod;
+            wide.maxScreenSpaceErrorPx = 32.0;
+            const TerrainLodSelector selector;
+            const Rectangle fallback = scheme.tileRectangleRadians(TileKey(0, 0, 0));
+            selection = selector.selectTiles(scheme, cameraPosCache_, fallback, wide, nullptr);
+        }
+        const TerrainFrameAssembler assembler;
+        const auto assembled = assembler.assemble(scheme, selection, source, e, 17, 16);
+        for (const auto& frame : assembled) {
+            frames.push_back(DemFrame{frame.key, frame.mesh});
+        }
     }
-    if (selection.tiles.empty()) {
-        // 兜底：放宽阈值重选。
-        TerrainLodConfig wide = lod;
-        wide.maxScreenSpaceErrorPx = 32.0;
-        const TerrainLodSelector selector;
-        const Rectangle fallback =
-            scheme.tileRectangleRadians(TileKey(0, 0, 0));
-        selection = selector.selectTiles(scheme, cameraPosCache_, fallback, wide, nullptr);
-    }
-    const TerrainFrameAssembler assembler;
-    const auto frames = assembler.assemble(scheme, selection, source, e, 17, 16);
     if (frames.empty()) {
         ALOGE("ensureGeometry: no frames assembled");
         return;

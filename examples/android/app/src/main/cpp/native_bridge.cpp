@@ -1,4 +1,5 @@
 #include <jni.h>
+#include <android/asset_manager_jni.h>
 
 #include "demo_scene.h"
 
@@ -26,4 +27,10 @@ Java_com_mapcplus_terrain_NativeRenderer_nativeSetCamera(JNIEnv*, jclass, jdoubl
                                                           jdouble latDeg, jdouble altMeters,
                                                           jdouble pitchDeg, jdouble headingDeg) {
     gScene.setCamera(lonDeg, latDeg, altMeters, pitchDeg, headingDeg);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeSetAssetManager(JNIEnv* env, jclass,
+                                                               jobject assetManager) {
+    gScene.setAssetManager(AAssetManager_fromJava(env, assetManager));
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <android/asset_manager.h>
+
 #include <earth_engine/core/math/Vec3.h>
 
 namespace demoscene {
@@ -12,6 +14,7 @@ public:
     void resize(int widthPx, int heightPx);
     void setCamera(double lonDeg, double latDeg, double altMeters, double pitchDeg,
                    double headingDeg);
+    void setAssetManager(AAssetManager* manager);
     void drawFrame();
 
 private:
@@ -44,6 +47,8 @@ private:
     double camPitchDeg_ = 45.0;    // 相对地平线向下角（0=掠视 90=正下）
     double camHeadingDeg_ = 200.0; // 0=北 顺时针
     bool cameraUserSet_ = false;
+    bool useDem_ = false; // debug.mapc.dem=1 → 资产 DEM（terrarium）
+    AAssetManager* assetManager_ = nullptr;
     double lastKey_[5] = {0, 0, 0, 0, 0};
 };
 
