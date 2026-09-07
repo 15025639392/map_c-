@@ -83,6 +83,24 @@ Java_com_mapcplus_terrain_NativeRenderer_nativeNavPan(JNIEnv*, jclass, jdouble d
     gScene.navPan(static_cast<double>(dxPx), static_cast<double>(dyPx));
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeTouchEvent(JNIEnv* env, jclass, jint action,
+                                                          jint pIdx, jfloatArray xsArr,
+                                                          jfloatArray ysArr) {
+    if (xsArr == nullptr || ysArr == nullptr) {
+        return;
+    }
+    const jsize n = env->GetArrayLength(xsArr);
+    if (n <= 0) {
+        return;
+    }
+    std::vector<jfloat> xs(static_cast<size_t>(n));
+    std::vector<jfloat> ys(static_cast<size_t>(n));
+    env->GetFloatArrayRegion(xsArr, 0, n, xs.data());
+    env->GetFloatArrayRegion(ysArr, 0, n, ys.data());
+    gScene.navTouchEvent(action, pIdx, xs.data(), ys.data(), static_cast<int>(n));
+}
+
 namespace demoscene {
 
 std::optional<std::vector<uint8_t>> httpGetBytes(const std::string& url) {

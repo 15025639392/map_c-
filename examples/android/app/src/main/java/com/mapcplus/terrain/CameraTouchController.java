@@ -96,54 +96,44 @@ public class CameraTouchController implements GLSurfaceView.OnTouchListener {
         }
     }
 
-    /** nav=1：手势增量 → native host 管线（native 端惯性/贴地防护，Java 不持位姿）。 */
+    /** nav=1：原始触摸流 → 引擎手势识别器（native 解析单指旋转/双指平移+缩放）。 */
     private boolean onTouchNav(MotionEvent ev) {
         final int pc = ev.getPointerCount();
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                twoFinger = false;
-                startDist = -1f;
-                lastX1 = ev.getX();
-                lastY1 = ev.getY();
+                sendNavTouch(0, 0, ev.getX(), ev.getY());
                 return true;
-            case MotionEvent.ACTION_POINTER_DOWN:
-            case MotionEvent.ACTION_POINTER_UP:
-                twoFinger = pc >= 2;
-                lastX1 = centroidX(ev);
-                lastY1 = centroidY(ev);
-                startDist = twoFinger ? dist(ev) : -1f;
-                return true;
-            case MotionEvent.ACTION_MOVE: {
-                if (pc >= 2) {
-                    // 双指：质心拖动 = 平移（pan），张/拢指 = 缩放（native 端同帧组合）。
-                    float cx = centroidX(ev);
-                    float cy = centroidY(ev);
-                    NativeRenderer.navPan(cx - lastX1, cy - lastY1);
-                    lastX1 = cx;
-                    lastY1 = cy;
-                    float d = dist(ev);
-                    float scale = 1f;
-                    if (startDist > 0f) {
-                        scale = d / startDist; // 张指(拉近>1)
-                    }
-                    startDist = d;
-                    if (scale != 1f) {
-                        NativeRenderer.navGesture(0.0, 0.0, scale);
-                    }
-                } else {
-                    // 单指：拖动 = 俯仰/航向（旋转轴）。
-                    float x = ev.getX();
-                    float y = ev.getY();
-                    NativeRenderer.navGesture(x - lastX1, y - lastY1, 1.0);
-                    lastX1 = x;
-                    lastY1 = y;
-                }
+            case MotionEvent.ACTION_POINTER_DOWN: {
+                final int i = ev.getActionIndex();
+                sendNavTouch(2, i, ev.getX(i), ev.getY(i));
                 return true;
             }
-            default:
-                // UP/CANCEL：不再送增量 → native 惯性滑行衰减直至收敛。
+            case MotionEvent.ACTION_POINTER_UP: {
+                final int i = ev.getActionIndex();
+                sendNavTouch(3, i, ev.getX(i), ev.getY(i));
+                return true;
+            }
+            case MotionEvent.ACTION_MOVE: {
+                float[] xs = new float[pc];
+                float[] ys = new float[pc];
+                for (int i = 0; i < pc; ++i) {
+                    xs[i] = ev.getX(i);
+                    ys[i] = ev.getY(i);
+                }
+                NativeRenderer.touchEvent(1, 0, xs, ys);
+                return true;
+            }
+            case MotionEvent.ACTION_UP:
+                sendNavTouch(4, 0, ev.getX(), ev.getY());
+                return true;
+            default: // CANCEL/其它 → 引擎复位
+                NativeRenderer.touchEvent(5, 0, new float[] {0f}, new float[] {0f});
                 return true;
         }
+    }
+
+    private static void sendNavTouch(int action, int pIdx, float x, float y) {
+        NativeRenderer.touchEvent(action, pIdx, new float[] {x}, new float[] {y});
     }
 
     private static float centroidX(MotionEvent ev) {

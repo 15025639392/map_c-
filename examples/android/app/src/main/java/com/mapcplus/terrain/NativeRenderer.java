@@ -62,6 +62,8 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     private static native boolean nativeNavEnabled();
     private static native void nativeNavGesture(double dxPx, double dyPx, double pinchScale);
     private static native void nativeNavPan(double dxPx, double dyPx);
+    private static native void nativeTouchEvent(int action, int pIdx, float[] xs,
+                                                float[] ys);
 
     /** Java 手势驱动的相机更新（拖动=俯仰/航向，双指=高度）。 */
     public static void updateCamera(double lonDeg, double latDeg, double altMeters,
@@ -82,6 +84,15 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     /** 双指平移增量（质心像素；native 与旋转/缩放同帧组合）。 */
     public static void navPan(double dxPx, double dyPx) {
         nativeNavPan(dxPx, dyPx);
+    }
+
+    /**
+     * 原始触摸事件转发（nav=1；引擎手势识别器在 native 侧解析）。
+     * action: 0=Down 1=Move 2=PointerDown 3=PointerUp 4=Up 5=Cancel；
+     * pIdx = 事件目标指 index；xs/ys 为该事件携带的触点坐标数组。
+     */
+    public static void touchEvent(int action, int pIdx, float[] xs, float[] ys) {
+        nativeTouchEvent(action, pIdx, xs, ys);
     }
 
     @Override public void onSurfaceCreated(GL10 unused, EGLConfig config) {

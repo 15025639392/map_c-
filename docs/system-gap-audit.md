@@ -52,7 +52,7 @@ S4→渲染全链真实内容出图打通；观感/朝向归用户 |
 | **S8** | **数据格式与内容注册** | 地形只吃 Terrain-RGB/Terrarium PNG；缺格式注册/内容类型（quantized-mesh/3D Tiles/glTF、JPEG/WebP、MVT/PMTiles）+ 每源元数据（availability 四叉树、geometricError、attribution） | B3 真实 geometricError；3D Tiles（阶段 8） | HeightmapCodec 族 + ITerrainDataSource 语义的注册点 |
 | **S9** | **时间/动画系统** | 无 Clock/缓动层；相机动画、换代 geomorph/fade、数据进场动画无驱动 | 换代过渡（T-V12）机制族 | 跨级吸附核（content/SeamAudit snap）已备，动画系统给换代"何时吸/吸多少/多快" |
 | **S10** | **天气系统** | 云/降水是世界坐标实体、被山挡、随太阳入夜变暗、可切换且过渡连续 | ○ 远期（weather） | 依赖 S1 渲染 + S7 光照 |
-| **S11** | **交互/拾取系统化** | 拾取只有地形三角面；缺命中分层（地形/影像/矢量/标注）、屏幕空间查询、多指手势识别器抽象（tap/double/pinch/rotate…）、事件路由到图层 | 相机/手势判据族 + 矢量交互 | TerrainPicking 之上做 HitTester + 事件总线 |
+| **S11** | **交互/拾取系统化** | 拾取只有地形三角面；缺命中分层（地形/影像/矢量/标注）、屏幕空间查询、tap/double 手势、事件路由到图层 | 相机/手势判据族 + 矢量交互 | **L3 已落（输入层）**：`interaction/PointerGestureRecognizer`（平台无关触摸流→单指旋转/双指平移+捏合；7 用例；demo nav=1 已走该层）。剩余：HitTester 命中分层 + tap/double + 事件路由 |
 
 > 注：你已知的"天气（S10）/手势（S6 输入层）"之外，S1/S2/S4/S5/S7/S8/S9/S11 与
 > S3 图层栈、S6 导航本体是我判断的主要缺口。S4/S5 在北极星里权重 ★★/★，是

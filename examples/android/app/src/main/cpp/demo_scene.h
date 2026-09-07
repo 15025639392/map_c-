@@ -10,6 +10,7 @@
 #include <earth_engine/camera/MapCameraSystem.h>
 #include <earth_engine/core/math/Vec3.h>
 #include <earth_engine/content/TerrainDataSource.h>
+#include <earth_engine/interaction/PointerGestureRecognizer.h>
 #include <earth_engine/renderer/IRenderDevice.h>
 
 namespace demoscene {
@@ -33,6 +34,9 @@ public:
     void navGesture(double dxPx, double dyPx, double pinchScale);
     /// L3 导航：双指平移增量（质心像素；与旋转/缩放同帧可组合）。
     void navPan(double dxPx, double dyPx);
+    /// L3 导航：原始触摸流转发（Java MotionEvent → 引擎手势识别器，GL 帧消费）。
+    /// action: 0=Down 1=Move 2=PointerDown 3=PointerUp 4=Up 5=Cancel；pIdx 为事件目标指。
+    void navTouchEvent(int action, int pointerIndex, const float* xs, const float* ys, int n);
     bool navEnabled() const { return navEnabled_; }
 
 private:
@@ -89,6 +93,15 @@ private:
     double navPanDyPx_ = 0.0;
     bool navPanHas_ = false;
     double navLastStepMs_ = 0.0;
+    // 引擎手势识别器 + 原始触摸事件队列（Java 线程入队、GL 帧消费）。
+    earth_engine::interaction::PointerGestureRecognizer navRecognizer_;
+    struct RawTouchEvent {
+        int action = 0;
+        int pointerIndex = 0;
+        std::vector<double> xs;
+        std::vector<double> ys;
+    };
+    std::vector<RawTouchEvent> navTouchQueue_;
     std::string flyProp_; // debug.mapc.flyto="lon,lat,alt,pit,hdg" 触发一次引擎 flyTo
     std::string panProbeProp_; // debug.mapc.panprobe="dx,dy" 注入 ~45 帧平移（设备证据）
     double panProbeDx_ = 0.0;

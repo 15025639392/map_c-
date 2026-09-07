@@ -136,6 +136,12 @@ set(MAP_RENDERER_SOURCES
     renderer/DisplacementTemplate.cpp
 )
 
+# interaction：平台无关手势识别（S6 输入层/S11 事件基；触摸流 → 相机增量）。
+set(MAP_INTERACTION_SOURCES
+    interaction/PointerGestureRecognizer.h
+    interaction/PointerGestureRecognizer.cpp
+)
+
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
 if(MAP_CURL_LIBRARY)
     list(APPEND MAP_PROVIDERS_SOURCES
@@ -157,4 +163,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_PROVIDERS_SOURCES}
     ${MAP_IMAGERY_SOURCES}
     ${MAP_RENDERER_SOURCES}
+    ${MAP_INTERACTION_SOURCES}
 )

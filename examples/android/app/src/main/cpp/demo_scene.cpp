@@ -507,6 +507,24 @@ void TerrainScene::navPan(double dxPx, double dyPx) {
     navPanHas_ = true;
 }
 
+void TerrainScene::navTouchEvent(int action, int pointerIndex, const float* xs,
+                                 const float* ys, int n) {
+    if (!navEnabled_ || n <= 0 || xs == nullptr || ys == nullptr) {
+        return;
+    }
+    RawTouchEvent ev;
+    ev.action = action;
+    ev.pointerIndex = pointerIndex;
+    ev.xs.reserve(static_cast<size_t>(n));
+    ev.ys.reserve(static_cast<size_t>(n));
+    for (int i = 0; i < n; ++i) {
+        ev.xs.push_back(static_cast<double>(xs[i]));
+        ev.ys.push_back(static_cast<double>(ys[i]));
+    }
+    std::lock_guard<std::mutex> lock(navMutex_);
+    navTouchQueue_.push_back(std::move(ev));
+}
+
 std::optional<double> TerrainScene::guardGroundHeightRad(double lonRad, double latRad) {
     const Cartographic c(lonRad, latRad, 0.0);
     if (!useDem_) {
@@ -557,6 +575,48 @@ void TerrainScene::navStep() {
     navLastStepMs_ = nowMs;
     if (dt <= 0.0) {
         return;
+    }
+
+    // 原始触摸流 → 引擎手势识别器（单指=旋转增量 / 双指=质心平移+捏合缩放），
+    // 增量累计进待消费 pending（与 Java 旧直发增量同语义）。
+    {
+        std::lock_guard<std::mutex> lock(navMutex_);
+        for (const RawTouchEvent& raw : navTouchQueue_) {
+            interaction::TouchEvent ev;
+            using A = interaction::TouchEvent::Action;
+            switch (raw.action) {
+            case 0: ev.action = A::Down; break;
+            case 1: ev.action = A::Move; break;
+            case 2: ev.action = A::PointerDown; break;
+            case 3: ev.action = A::PointerUp; break;
+            case 4: ev.action = A::Up; break;
+            default: ev.action = A::Cancel; break;
+            }
+            ev.pointerIndex = raw.pointerIndex;
+            ev.points.reserve(raw.xs.size());
+            for (size_t i = 0; i < raw.xs.size(); ++i) {
+                interaction::TouchEvent::Point p;
+                p.xPx = raw.xs[i];
+                p.yPx = raw.ys[i];
+                ev.points.push_back(p);
+            }
+            const interaction::GestureDelta d = navRecognizer_.onEvent(ev);
+            if (d.rotateDxPx != 0.0 || d.rotateDyPx != 0.0) {
+                navDxPx_ += d.rotateDxPx;
+                navDyPx_ += d.rotateDyPx;
+                navHasInput_ = true;
+            }
+            if (d.panDxPx != 0.0 || d.panDyPx != 0.0) {
+                navPanDxPx_ += d.panDxPx;
+                navPanDyPx_ += d.panDyPx;
+                navPanHas_ = true;
+            }
+            if (d.pinchScale != 1.0 && d.pinchScale > 0.0) {
+                navScale_ *= d.pinchScale;
+                navHasInput_ = true;
+            }
+        }
+        navTouchQueue_.clear();
     }
 
     double dx = 0.0, dy = 0.0, scale = 1.0;

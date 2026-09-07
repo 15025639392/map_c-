@@ -47,11 +47,12 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**57 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54；此后 L2/L3 续增
-至 57——渲染抽象/位移属性通道/引擎相机制各+1 批）。
+**58 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54；此后 L2/L3 续增
+至 58——渲染抽象/位移属性通道/引擎相机制/手势识别器各+1 批）。
 地形链路 44 + L1/L2/L3 系列：缓存×2/退化链与瓦源装配（含 keepAlpha）/相机运动族/引擎相机制
-（MapCameraSystem：惯性/贴地防护/flyTo，host 10 用例）/渲染抽象（IRenderDevice 纹理+UV+DrawList
-设备验证）/PngToRgba8/RGBA alpha。真实内容三层同屏：
+（MapCameraSystem：惯性/贴地/flyTo/pan，host 14 用例）/手势识别器（interaction/PointerGestureRecognizer
+平台无关触摸流，7 用例）/渲染抽象（IRenderDevice 纹理+UV+DrawList 设备验证）/PngToRgba8/RGBA alpha。
+真实内容三层同屏：
 NASA DEM 高度 + 高德卫星（style=6）+ 路网注记（style=8），图层开关 img/lbl。
 host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
@@ -94,7 +95,9 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   属性通道位移与 baked 逐像素一致。
 - 引擎相机制（L3）：`debug.mapc.nav`（1=手势走引擎 MapCameraSystem：惯性滑行/贴地防护/flyTo/
   中心平移，重启生效；0=默认 Java 直连基线，像素不变）——`src/earth_engine/camera/MapCameraSystem.{h,cpp}`
-  host 语义（14 用例，57/57）。手势（nav=1）：单指拖动=俯仰/航向、双指拖动=平移、双指张拢=缩放。
+  host 语义（14 用例，58/58）。手势（nav=1）：Java 只转发原始触摸流，**识别在引擎
+  `interaction/PointerGestureRecognizer`**（host 7 用例）：单指拖动=俯仰/航向、双指拖动=平移、
+  双指张拢=缩放。
   设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`
   （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住、pan lon 106.440→106.404）。
 - 飞行/平移探针（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`
