@@ -404,7 +404,8 @@ void TerrainScene::ensureGeometry() {
             bandRect = Rectangle::fromDegrees(camLonDeg_ - 0.35, camLatDeg_ - 0.25,
                                               camLonDeg_ + 0.35, camLatDeg_ + 0.25);
         }
-        frames = buildDemFrames(scheme, demSource, bandRect, e, level, 33);
+        const int demNodes = (level >= 13) ? 65 : 33; // 近景(L13)网格加密
+        frames = buildDemFrames(scheme, demSource, bandRect, e, level, demNodes);
         ALOG("dem band level=%d tiles=%zu foot=%d", level, frames.size(),
              footOpt.has_value() ? 1 : 0);
     } else {

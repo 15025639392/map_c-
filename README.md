@@ -50,3 +50,21 @@ LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查�
 拾取，外加帧缓存增量与固定机位基线。判据/能力映射见
 `docs/northstar/engine-targets.md` §5；地形判据状态逐条见 `docs/northstar/terrain.md`
 （全部 ❌——观感类需 GPU 平台/真机，机制类证据已登记）。
+
+
+## Android 模拟器 demo（观感验证）
+
+```bash
+cd examples/android
+export JAVA_HOME=/Users/yan/Library/Java/JavaVirtualMachines/jdk-17.0.20.1+1/Contents/Home  # 需完整 JDK(jlink)
+export GIS_MD_VCPKG_INSTALLED=/Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell am start -n com.mapcplus.terrain/.MainActivity
+```
+
+- 数据：app 内置真实 terrarium DEM（`app/src/main/assets/dem`，重庆缙云山 z10–13）；有资产即真地形渲染。
+- 机位：`adb shell setprop debug.mapc.station 1..5`（M-near/M-mid/M-graze/M-high/M-coarse）后重启 app。
+- 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
+- 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。
+
