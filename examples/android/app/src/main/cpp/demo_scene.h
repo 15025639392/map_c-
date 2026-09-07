@@ -26,6 +26,7 @@ private:
 
     std::unique_ptr<earth_engine::render::IRenderDevice> device_;
     uint32_t programHandle_ = 0;
+    uint32_t textureHandle_ = 0; // 合成"影像瓦"棋盘（纹理管线验证）
     // 每瓦一个设备网格句柄（DrawList-lite：逐瓦上传/绘制/账本到瓦级）。
     std::vector<uint32_t> meshHandles_;
     bool geometryReady_ = false;

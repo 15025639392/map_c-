@@ -40,6 +40,11 @@ Gles3RenderDevice::~Gles3RenderDevice() {
         if (m.ebo) glDeleteBuffers(1, &m.ebo);
     }
     meshes_.clear();
+    for (auto& [h, t] : textures_) {
+        (void)h;
+        if (t.id) glDeleteTextures(1, &t.id);
+    }
+    textures_.clear();
     for (auto& [h, p] : programs_) {
         (void)h;
         if (p.id) glDeleteProgram(p.id);
@@ -85,6 +90,18 @@ uint32_t Gles3RenderDevice::uploadMesh(const earth_engine::render::MeshUploadDat
         glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, nullptr);
     }
 
+    if (mesh.uvs.empty()) {
+        glVertexAttrib2f(3, 0.0f, 0.0f);
+    } else {
+        glGenBuffers(1, &m.vboUv);
+        glBindBuffer(GL_ARRAY_BUFFER, m.vboUv);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(mesh.uvs.size() * sizeof(float)),
+                     mesh.uvs.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+    }
+
     glGenBuffers(1, &m.ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -99,6 +116,7 @@ uint32_t Gles3RenderDevice::uploadMesh(const earth_engine::render::MeshUploadDat
     stats_.uploadedBytes += mesh.positions.size() * sizeof(float) +
                             mesh.normals.size() * sizeof(float) +
                             mesh.heights.size() * sizeof(float) +
+                            mesh.uvs.size() * sizeof(float) +
                             mesh.indices.size() * sizeof(uint32_t);
     stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
     return handle;
@@ -114,6 +132,7 @@ void Gles3RenderDevice::releaseMesh(uint32_t handle) {
     if (m.vboPos) glDeleteBuffers(1, &m.vboPos);
     if (m.vboNor) glDeleteBuffers(1, &m.vboNor);
     if (m.vboHei) glDeleteBuffers(1, &m.vboHei);
+    if (m.vboUv) glDeleteBuffers(1, &m.vboUv);
     if (m.ebo) glDeleteBuffers(1, &m.ebo);
     meshes_.erase(it);
     stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
@@ -211,6 +230,61 @@ void Gles3RenderDevice::setUniformVec3(const char* name, float x, float y, float
         return;
     }
     glUniform3f(uniformLocation(it->second, name), x, y, z);
+}
+
+uint32_t Gles3RenderDevice::createTexture2D(const earth_engine::render::Texture2DData& data) {
+    if (!data.valid()) {
+        GLOGE("createTexture2D: invalid data");
+        return 0;
+    }
+    GLuint id = 0;
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, data.width, data.height, 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, data.rgba8.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    const uint32_t handle = nextTexture_++;
+    textures_.emplace(handle, Texture{id});
+    stats_.uploadedBytes += static_cast<uint64_t>(data.width) * data.height * 4u;
+    stats_.liveTextures = static_cast<uint32_t>(textures_.size());
+    return handle;
+}
+
+void Gles3RenderDevice::releaseTexture(uint32_t handle) {
+    const auto it = textures_.find(handle);
+    if (it == textures_.end()) {
+        return;
+    }
+    glDeleteTextures(1, &it->second.id);
+    textures_.erase(it);
+    stats_.liveTextures = static_cast<uint32_t>(textures_.size());
+}
+
+void Gles3RenderDevice::bindTexture2D(uint32_t unit, uint32_t handle) {
+    if (handle == 0) {
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        return;
+    }
+    const auto it = textures_.find(handle);
+    if (it == textures_.end()) {
+        GLOGE("bindTexture2D: dead handle %u", handle);
+        return;
+    }
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(GL_TEXTURE_2D, it->second.id);
+}
+
+void Gles3RenderDevice::setUniformInt(const char* name, int value) {
+    const auto it = programs_.find(boundHandle_);
+    if (it == programs_.end()) {
+        return;
+    }
+    glUniform1i(uniformLocation(it->second, name), value);
 }
 
 void Gles3RenderDevice::setViewport(int widthPx, int heightPx) {

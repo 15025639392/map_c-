@@ -8,17 +8,20 @@ namespace earth_engine::render {
 
 /// CPU 侧三角形网格上传描述：位置/法线（ECEF，三轴 float 数组，长度相同）+
 /// 可选逐顶点高度通道（数量 = 顶点数；空 = 无高度通道，实现按 0 处理）+
+/// 可选逐顶点 UV（每顶点 2 float；空 = 无纹理坐标，实现按 0 处理）+
 /// 三角形索引（3 的倍数）。
 struct MeshUploadData {
     std::vector<float> positions;
     std::vector<float> normals;
     std::vector<float> heights; // 可选：长度 == positions/3 或为空
+    std::vector<float> uvs;     // 可选：长度 == positions/3*2 或为空
     std::vector<uint32_t> indices;
 
     bool valid() const {
         return positions.size() % 3 == 0 && normals.size() == positions.size() &&
                indices.size() % 3 == 0 && !indices.empty() &&
-               (heights.empty() || heights.size() == positions.size() / 3);
+               (heights.empty() || heights.size() == positions.size() / 3) &&
+               (uvs.empty() || uvs.size() == positions.size() / 3 * 2);
     }
 };
 

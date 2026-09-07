@@ -59,6 +59,7 @@ public:
         stats_.uploadedBytes += mesh.positions.size() * sizeof(float) +
                                 mesh.normals.size() * sizeof(float) +
                                 mesh.heights.size() * sizeof(float) +
+                                mesh.uvs.size() * sizeof(float) +
                                 mesh.indices.size() * sizeof(uint32_t);
         stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
         return h;
@@ -268,6 +269,15 @@ TEST(RenderDevice, InvalidInputsRejectedWithNullHandles) {
     HostTraceRenderDevice dev;
     EXPECT_EQ(dev.uploadMesh(MeshUploadData()), 0u);
     EXPECT_EQ(dev.createProgram(ProgramSource()), 0u);
+}
+
+TEST(RenderDevice, OptionalUvsAccepted) {
+    MeshUploadData m = makeMesh();
+    m.uvs = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
+    EXPECT_TRUE(m.valid());
+    MeshUploadData bad = m;
+    bad.uvs = {0.0f, 0.0f, 1.0f}; // 数量不匹配 → 无效
+    EXPECT_FALSE(bad.valid());
 }
 
 TEST(RenderDevice, OptionalHeightsAccepted) {

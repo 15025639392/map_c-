@@ -122,11 +122,14 @@ const char* kVs =
     "uniform mat4 uMvp;\n"
     "uniform mat3 uViewRot;\n"
     "layout(location=2) in float aHei;\n"
+    "layout(location=3) in vec2 aUv;\n"
     "out vec3 vNor;\n"
     "out float vHeight;\n"
+    "out vec2 vUv;\n"
     "void main() {\n"
     "  vNor = uViewRot * aNor;\n"
     "  vHeight = aHei;\n"
+    "  vUv = aUv;\n"
     "  gl_Position = uMvp * vec4(aPos, 1.0);\n"
     "}\n";
 
@@ -137,7 +140,9 @@ const char* kFs =
     "out vec4 fragColor;\n"
     "uniform vec3 uLightDir;\n"
     "uniform vec3 uBaseColor;\n"
+    "uniform sampler2D uTex;\n"
     "in float vHeight;\n"
+    "in vec2 vUv;\n"
     "void main() {\n"
     "  vec3 n = normalize(vNor);\n"
     "  vec3 l = normalize(uLightDir);\n"
@@ -147,7 +152,8 @@ const char* kFs =
     "  vec3 mid  = vec3(0.48, 0.43, 0.30);\n"
     "  vec3 high = vec3(0.66, 0.52, 0.34);\n"
     "  vec3 tint = t < 0.5 ? mix(low, mid, t * 2.0) : mix(mid, high, (t - 0.5) * 2.0);\n"
-    "  vec3 c = tint * (0.42 + 0.9 * d * d);\n"
+    "  float texM = texture(uTex, vUv).r;\n"
+    "  vec3 c = tint * (0.42 + 0.9 * d * d) * (0.78 + 0.22 * texM);\n"
     "  fragColor = vec4(c, 1.0);\n"
     "}\n";
 
@@ -164,8 +170,12 @@ void TerrainScene::destroyGlObjects() {
         for (uint32_t h : meshHandles_) {
             device_->releaseMesh(h);
         }
+        if (textureHandle_ != 0) {
+            device_->releaseTexture(textureHandle_);
+        }
     }
     programHandle_ = 0;
+    textureHandle_ = 0;
     meshHandles_.clear();
     device_.reset();
     geometryReady_ = false;
@@ -200,6 +210,28 @@ void TerrainScene::initializeGl() {
     if (programHandle_ == 0) {
         ALOGE("createProgram failed");
     }
+    // 合成 256² 棋盘"影像瓦"（纹理管线验证；真实影像源接入后替换）。
+    {
+        constexpr int kTex = 256;
+        constexpr int kCell = 32;
+        render::Texture2DData tex;
+        tex.width = kTex;
+        tex.height = kTex;
+        tex.rgba8.resize(static_cast<size_t>(kTex) * kTex * 4);
+        for (int y = 0; y < kTex; ++y) {
+            for (int x = 0; x < kTex; ++x) {
+                const int idx = (y / kCell + x / kCell) & 1;
+                const uint8_t g = idx == 0 ? 255 : 200;
+                const size_t off = (static_cast<size_t>(y) * kTex + x) * 4;
+                tex.rgba8[off] = g;
+                tex.rgba8[off + 1] = g;
+                tex.rgba8[off + 2] = g;
+                tex.rgba8[off + 3] = 255;
+            }
+        }
+        textureHandle_ = device_->createTexture2D(tex);
+        ALOG("checker texture handle=%u", textureHandle_);
+    }
 }
 
 void TerrainScene::resize(int widthPx, int heightPx) {
@@ -225,6 +257,10 @@ void TerrainScene::drawFrame() {
 
     device_->useProgram(programHandle_);
     device_->clearColor(0.42f, 0.55f, 0.74f, 1.0f);
+    if (textureHandle_ != 0) {
+        device_->bindTexture2D(0, textureHandle_);
+        device_->setUniformInt("uTex", 0);
+    }
 
     // MVP：透视 × 视图（几何已 RTC 到相机位置）。
     const double fovY = earth_engine::degreesToRadians(60.0);
@@ -453,6 +489,17 @@ void TerrainScene::ensureGeometry() {
         md.positions.reserve(positions.size() * 3);
         md.normals.reserve(normals.size() * 3);
         md.heights.reserve(positions.size());
+        md.uvs.reserve(positions.size() * 2);
+        // 瓦本地 AABB（RTC 后）→ UV 0..1（每瓦覆盖整张纹理；真实影像按 mercator 域映射）。
+        Vec3 mn(1e30, 1e30, 1e30), mx(-1e30, -1e30, -1e30);
+        for (const Vec3& p : positions) {
+            const Vec3 rel = p - cameraPosCache_;
+            mn = Vec3(std::min(mn.x(), rel.x()), std::min(mn.y(), rel.y()),
+                      std::min(mn.z(), rel.z()));
+            mx = Vec3(std::max(mx.x(), rel.x()), std::max(mx.y(), rel.y()),
+                      std::max(mx.z(), rel.z()));
+        }
+        const Vec3 range = mx - mn;
         for (size_t i = 0; i < positions.size(); ++i) {
             const Vec3 rel = positions[i] - cameraPosCache_;
             md.positions.push_back(static_cast<float>(rel.x()));
@@ -463,6 +510,10 @@ void TerrainScene::ensureGeometry() {
             md.normals.push_back(static_cast<float>(normals[i].z()));
             const Cartographic c = e.cartesianToCartographic(positions[i]);
             md.heights.push_back(static_cast<float>(c.height()));
+            const double u = range.x() > 1e-9 ? (rel.x() - mn.x()) / range.x() : 0.0;
+            const double v = range.y() > 1e-9 ? (rel.y() - mn.y()) / range.y() : 0.0;
+            md.uvs.push_back(static_cast<float>(u));
+            md.uvs.push_back(static_cast<float>(v));
         }
         md.indices = frame.mesh.indices; // 每瓦索引本瓦 0 基，无需平移
         const uint32_t h = device_->uploadMesh(md);

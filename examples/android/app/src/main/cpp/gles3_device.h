@@ -23,12 +23,16 @@ public:
 
     uint32_t uploadMesh(const earth_engine::render::MeshUploadData& mesh) override;
     void releaseMesh(uint32_t handle) override;
+    uint32_t createTexture2D(const earth_engine::render::Texture2DData& data) override;
+    void releaseTexture(uint32_t handle) override;
+    void bindTexture2D(uint32_t unit, uint32_t handle) override;
     uint32_t createProgram(const earth_engine::render::ProgramSource& source) override;
     void releaseProgram(uint32_t handle) override;
     void useProgram(uint32_t handle) override;
     void setUniformMat4(const char* name, const float* mat4x4) override;
     void setUniformMat3(const char* name, const float* mat3x3) override;
     void setUniformVec3(const char* name, float x, float y, float z) override;
+    void setUniformInt(const char* name, int value) override;
     void setViewport(int widthPx, int heightPx) override;
     void clearColor(float r, float g, float b, float a) override;
     void drawMesh(uint32_t handle) override;
@@ -39,8 +43,12 @@ private:
         GLuint vboPos = 0;
         GLuint vboNor = 0;
         GLuint vboHei = 0;
+        GLuint vboUv = 0;
         GLuint ebo = 0;
         GLsizei indexCount = 0;
+    };
+    struct Texture {
+        GLuint id = 0;
     };
     struct Program {
         GLuint id = 0;
@@ -52,8 +60,10 @@ private:
     earth_engine::render::DrawStats stats_;
 
     uint32_t nextMesh_ = 1;
+    uint32_t nextTexture_ = 1;
     uint32_t nextProgram_ = 1;
     std::unordered_map<uint32_t, Mesh> meshes_;
+    std::unordered_map<uint32_t, Texture> textures_;
     std::unordered_map<uint32_t, Program> programs_;
     uint32_t boundHandle_ = 0; // 当前绑定程序（句柄）
 };
