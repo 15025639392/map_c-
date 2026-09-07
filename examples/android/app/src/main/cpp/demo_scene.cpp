@@ -20,6 +20,7 @@
 #include <earth_engine/core/geodesy/Transforms.h>
 #include <earth_engine/content/HeightmapTile.h>
 #include <earth_engine/imagery/ImageryTileSource.h>
+#include <earth_engine/renderer/HeightTextureCodec.h>
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/content/TerrainFrameAssembler.h>
 #include <earth_engine/core/geodesy/Ellipsoid.h>
@@ -159,6 +160,14 @@ const char* kFs =
     "      vec4 lbl = texture(uLabel, vUv);\n"
     "      albedo = mix(albedo, lbl.rgb, lbl.a);\n"
     "    }\n"
+    "  } else if (uImageryMode == 2) {\n"
+    "    vec3 enc = texture(uTex, vUv).rgb;\n"
+    "    float h = -10000.0 + dot(enc, vec3(65536.0, 256.0, 1.0)) * 0.1;\n"
+    "    float t = clamp((h - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
+    "    vec3 low  = vec3(0.35, 0.48, 0.25);\n"
+    "    vec3 mid  = vec3(0.48, 0.43, 0.30);\n"
+    "    vec3 high = vec3(0.66, 0.52, 0.34);\n"
+    "    albedo = t < 0.5 ? mix(low, mid, t * 2.0) : mix(mid, high, (t - 0.5) * 2.0);\n"
     "  } else {\n"
     "    float t = clamp((vHeight - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
     "    vec3 low  = vec3(0.35, 0.48, 0.25);\n"
@@ -227,8 +236,11 @@ void TerrainScene::initializeGl() {
     char lblProp[PROP_VALUE_MAX] = {0};
     useImg_ = (__system_property_get("debug.mapc.img", imgProp) <= 0) || (imgProp[0] == '1');
     useLbl_ = (__system_property_get("debug.mapc.lbl", lblProp) <= 0) || (lblProp[0] == '1');
-    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d", useDem_ ? 1 : 0,
-         assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0);
+    char hgtProp[PROP_VALUE_MAX] = {0};
+    useHgt_ = (__system_property_get("debug.mapc.hgt", hgtProp) > 0) && (hgtProp[0] == '1');
+    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d", useDem_ ? 1 : 0,
+         assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0,
+         useHgt_ ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -318,7 +330,12 @@ void TerrainScene::drawFrame() {
     device_->setUniformVec3("uLightDir", 0.25f, 0.55f, 0.80f);
     device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
     for (size_t i = 0; i < meshHandles_.size(); ++i) { // DrawList-lite：逐瓦绘制
-        if (!tileTextures_.empty()) {
+        if (useHgt_ && !tileTextures_.empty() && tileTextures_[i] != 0u) {
+            // 高度纹理模式（GPU 位移数据链演示：绝对编码 RGBA → shader 解码色带）。
+            device_->bindTexture2D(0, tileTextures_[i]);
+            device_->setUniformInt("uTex", 0);
+            device_->setUniformInt("uImageryMode", 2);
+        } else if (!tileTextures_.empty()) {
             // 影像模式：每瓦高德卫星纹理（缺失瓦回退高度着色）。
             const uint32_t th = tileTextures_[i];
             if (th != 0u) {
@@ -529,6 +546,38 @@ void TerrainScene::ensureGeometry() {
                 if (!wantImg && th != 0u) { // 关影像层仍释放已建纹理
                     device_->releaseTexture(th);
                 }
+            }
+            if (useHgt_) {
+                // 高度纹理：每瓦 grid（缓存命中）→ 裁 cell 512 → RGBA8 编码 → 上传。
+                for (uint32_t th : tileTextures_) {
+                    if (th != 0u) device_->releaseTexture(th);
+                }
+                for (uint32_t lh : labelTextures_) {
+                    if (lh != 0u) device_->releaseTexture(lh);
+                }
+                tileTextures_.clear();
+                labelTextures_.clear();
+                tileTextures_.reserve(frames.size());
+                for (const auto& f : frames) {
+                    const auto g = ringSource.requestHeights(scheme, f.key, 512);
+                    uint32_t th = 0u;
+                    if (g && g->width >= 514 && g->height >= 514) {
+                        std::vector<double> cells(static_cast<size_t>(512) * 512);
+                        for (int r = 0; r < 512; ++r) {
+                            for (int c = 0; c < 512; ++c) {
+                                cells[static_cast<size_t>(r) * 512 + c] =
+                                    g->heights[static_cast<size_t>(r + 1) * g->width + (c + 1)];
+                            }
+                        }
+                        const auto enc =
+                            render::HeightTextureCodec::encode(cells, 512, 512);
+                        if (enc.texture.valid()) {
+                            th = device_->createTexture2D(enc.texture);
+                        }
+                    }
+                    tileTextures_.push_back(th);
+                }
+                labelTextures_.assign(tileTextures_.size(), 0u);
             }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
