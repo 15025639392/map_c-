@@ -12,6 +12,7 @@
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/interaction/PointerGestureRecognizer.h>
 #include <earth_engine/renderer/IRenderDevice.h>
+#include <earth_engine/scene/LayerStack.h>
 
 namespace demoscene {
 
@@ -80,6 +81,8 @@ private:
     bool useDisp_ = false; // debug.mapc.disp=1 → 基准模板+位移向量属性（GPU 顶点位移）
     AAssetManager* assetManager_ = nullptr;
     double lastKey_[5] = {0, 0, 0, 0, 0};
+    // S3：引擎图层栈（图层开关的事实源；绘制序 dem→imagery→label→debug）。
+    earth_engine::scene::LayerStack layerStack_;
 
     // L3 导航（引擎 MapCameraSystem；默认关 → 基线手势直连不变）。
     bool navEnabled_ = false;

@@ -47,11 +47,11 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**58 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54；此后 L2/L3 续增
-至 58——渲染抽象/位移属性通道/引擎相机制/手势识别器各+1 批）。
+**59 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54；此后 L2/L3 续增
+至 59——渲染抽象/位移属性通道/引擎相机制/手势识别器/图层栈各+1 批）。
 地形链路 44 + L1/L2/L3 系列：缓存×2/退化链与瓦源装配（含 keepAlpha）/相机运动族/引擎相机制
-（MapCameraSystem：惯性/贴地/flyTo/pan，host 14 用例）/手势识别器（interaction/PointerGestureRecognizer
-平台无关触摸流，7 用例）/渲染抽象（IRenderDevice 纹理+UV+DrawList 设备验证）/PngToRgba8/RGBA alpha。
+（MapCameraSystem：惯性/贴地/flyTo/pan，host 16 用例）/手势识别器（interaction/PointerGestureRecognizer
+平台无关触摸流，7 用例）/图层栈（scene/LayerStack：顺序/开关/透明度/差分，host 5 用例）/渲染抽象（IRenderDevice 纹理+UV+DrawList 设备验证）/PngToRgba8/RGBA alpha。
 真实内容三层同屏：
 NASA DEM 高度 + 高德卫星（style=6）+ 路网注记（style=8），图层开关 img/lbl。
 host 地形主链路闭环：相机（脚印/射线/视锥）→

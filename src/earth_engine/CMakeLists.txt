@@ -142,6 +142,12 @@ set(MAP_INTERACTION_SOURCES
     interaction/PointerGestureRecognizer.cpp
 )
 
+# scene：场景/图层系统（S3；图层栈元数据+变更账，与 GPU/网络解耦）。
+set(MAP_SCENE_SOURCES
+    scene/LayerStack.h
+    scene/LayerStack.cpp
+)
+
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
 if(MAP_CURL_LIBRARY)
     list(APPEND MAP_PROVIDERS_SOURCES
@@ -164,4 +170,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_IMAGERY_SOURCES}
     ${MAP_RENDERER_SOURCES}
     ${MAP_INTERACTION_SOURCES}
+    ${MAP_SCENE_SOURCES}
 )

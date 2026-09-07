@@ -71,6 +71,7 @@
 | CameraNavController（惯性×贴地联动控制器，S6） | camera/CameraNavController.{h,cpp} |
 | MapCameraSystem（引擎相机制：turret 语义/手势→速率/惯性/贴地/flyTo/中心平移 pan，L3 S6） | camera/MapCameraSystem.{h,cpp} |
 | PointerGestureRecognizer（平台无关触摸流→旋转/平移/捏合增量，L3 S6/S11 输入层） | interaction/PointerGestureRecognizer.{h,cpp} |
+| Layer/LayerStack（场景图层：顺序/开关/透明度/生命周期/差分账，L3 S3） | scene/LayerStack.{h,cpp} |
 | Frustum（fromCamera / containsPoint / intersectsSphere） | camera/Frustum.{h,cpp} |
 | assembleTerrainFrameForCamera / TerrainCameraPipelineConfig | camera/TerrainCameraPipeline.{h,cpp} |
 
@@ -102,6 +103,7 @@ fixed_station_baseline；
 `camera/`：camera_view、camera_motion、terrain_ground_guard、camera_nav_controller、frustum、
 map_camera_system（引擎相机制 14 用例：旋转/缩放/平移/惯性/贴地/flyTo，L3）、terrain_camera_pipeline；
 `interaction/`：pointer_gesture_recognizer（7 用例，S6/S11 输入层）；
+`scene/`：layer_stack（5 用例，S3）；
 `renderer/`：render_device_interface（IRenderDevice 语义/防御用例）；
 `providers/`：tile_url_formatter、tile_cache、disk_tile_cache、terrain_rgb_source、png_terrain_source、
 nasa_ring_source（NASA 514 带环源 + MAPC_LIVE_NET 真实端点）、http_bytes_source、

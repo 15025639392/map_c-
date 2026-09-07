@@ -267,6 +267,24 @@ void TerrainScene::initializeGl() {
     ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d disp=%d nav=%d", useDem_ ? 1 : 0,
          assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0,
          useHgt_ ? 1 : 0, useDisp_ ? 1 : 0, navEnabled_ ? 1 : 0);
+
+    // S3：引擎图层栈 = 图层开关事实源（绘制序：dem → imagery → label → debug）。
+    // 既有 use*_ 布尔保持为其镜像（本层行为逐位不变；后续换栈序/透明度直接改栈）。
+    layerStack_.clear();
+    layerStack_.addLayer(std::make_unique<scene::Layer>("dem", "dem"))->setVisible(useDem_);
+    layerStack_.addLayer(std::make_unique<scene::Layer>("imagery", "imagery"))
+        ->setVisible(useImg_);
+    layerStack_.addLayer(std::make_unique<scene::Layer>("label", "label"))->setVisible(useLbl_);
+    layerStack_.addLayer(std::make_unique<scene::Layer>("debug", "overlay"))
+        ->setVisible(useHgt_ || useDisp_);
+    {
+        std::string order;
+        for (const scene::Layer* l : layerStack_.activeOrder()) {
+            order += l->name();
+            order += ' ';
+        }
+        ALOG("layer stack: %s", order.c_str());
+    }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
