@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 namespace earth_engine::render {
@@ -18,30 +19,45 @@ struct MeshUploadData {
     }
 };
 
-/// 渲染抽象（S1 第一步，roadmap 阶段 2「RenderDevice 接口层，先 host 空实现+用例」）。
+/// 着色器程序源码（顶点/片元）。
+struct ProgramSource {
+    std::string vertexShader;
+    std::string fragmentShader;
+
+    bool valid() const { return !vertexShader.empty() && !fragmentShader.empty(); }
+};
+
+/// 渲染抽象（S1/L2；roadmap「RenderDevice 接口层，先 host 空实现+用例」）。
 ///
-/// 目的：把 demo 的 GL 直写（VAO/VBO/EBO/shader）收口到最小设备接口后面，
-/// 使引擎核心不绑定具体图形 API；后续以 GLES3/Metal 实现本接口即解锁观感判据
-/// 的可测化（T-V*）。本文件**不含任何图形头**——接口只依赖引擎自有类型。
-///
-/// 最小面（按当前 demo 需求裁剪，随 S1 演进扩充：纹理/帧缓冲/管线状态后加）：
-/// - MeshUploadData：CPU 侧三角形网格上传描述（位置/法线 ECEF float 三轴数组 +
-///   索引；是否顶点色/高度通道等后续加）；
-/// - IRenderDevice：设备抽象——上传网格得 opaque 句柄、释放、按句柄绘制、
-///   视口设置。句柄语义（分配/复用/销毁后失效）由实现定义，接口只保证：
-///   未 upload 的句柄 draw 为未定义行为（实现应防呆/可断言）。
+/// 目的：把 demo 的 GL 直写（VAO/VBO/EBO/program/uniform）收口到最小设备接口后，
+/// 引擎核心不绑定具体图形 API；GLES3/Metal 实现本接口即解锁观感判据可测化（T-V*）。
+/// 本文件**不含任何图形头**。接口语义（实现须遵守，host 替身钉口径）：
+/// - 句柄：create*/upload* 返回 >0；失败/无效输入返回 0（空句柄）；release 防御幂等；
+/// - 状态机：drawMesh 需要"已上传且未释放的网格句柄 + 当前已绑定的 program"，
+///   否则为使用错误（实现应防御记录/断言，不崩溃）；
+/// - uniform/视口/清屏为最近值语义（实现记录最后调用）。
 class IRenderDevice {
 public:
     virtual ~IRenderDevice() = default;
 
-    /// 上传 CPU 网格 → 返回设备句柄（>0）。
+    // -- 网格 --
     virtual uint32_t uploadMesh(const MeshUploadData& mesh) = 0;
-    /// 释放句柄（此后不可 draw）。重复释放由实现防御。
     virtual void releaseMesh(uint32_t handle) = 0;
-    /// 绘制已上传网格（drawIndexed）。
-    virtual void drawMesh(uint32_t handle) = 0;
-    /// 设置视口（像素）。
+
+    // -- 着色器程序 --
+    virtual uint32_t createProgram(const ProgramSource& source) = 0;
+    virtual void releaseProgram(uint32_t handle) = 0;
+    virtual void useProgram(uint32_t handle) = 0;
+
+    // -- uniform / 视口 / 清屏 --
+    /// mat4 列主序 16 float（与引擎 Mat4 布局一致）。
+    virtual void setUniformMat4(const char* name, const float* mat4x4) = 0;
+    virtual void setUniformVec3(const char* name, float x, float y, float z) = 0;
     virtual void setViewport(int widthPx, int heightPx) = 0;
+    virtual void clearColor(float r, float g, float b, float a) = 0;
+
+    // -- 绘制 --
+    virtual void drawMesh(uint32_t handle) = 0;
 };
 
 } // namespace earth_engine::render
