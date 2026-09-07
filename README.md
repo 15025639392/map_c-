@@ -46,7 +46,7 @@ map_cplus/
 
 ## 当前状态（2026-09-08）
 
-**32 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
+**34 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
 拾取，外加帧缓存增量与固定机位基线。判据/能力映射见
 `docs/northstar/engine-targets.md` §5；地形判据状态逐条见 `docs/northstar/terrain.md`
