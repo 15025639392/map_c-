@@ -166,7 +166,18 @@
     T 顶点（不同细分的自然结果，注明归 stage-6 remap 域处理）；父瓦中心 =
     四子瓦共同角点。
   当前 25 套件全绿。
-- 下一步：Provider+HTTP（真实 DEM；引入 curl 依赖）或为拾取/选择加视锥精确剪枝。
+### Provider 语义 + 本地 fixture（2026-09-08，阶段 3 的 provider 前身）
+
+- `providers/TileUrlFormatter.{h,cpp}`——{z}/{x}/{y} URL 模板替换（单一格式化点，
+  {tms_y}/{s} 将来在此扩展）；未知占位原样保留便于排查。
+- `providers/ITileBytesSource.h`——瓦片字节源抽象（将来 HTTP/curl 只需实现它）。
+- `providers/TerrainRgbTileSource.{h,cpp}`——Terrain-RGB 高度 Provider：
+  字节源 → HeightmapCodec 解码 → TerrainGrid（ITerrainDataSource 实现；
+  PNG 解码/网络属后续接入层，接口不变）。
+- 单测 +2 套件（test_tile_url_formatter / test_terrain_rgb_source）：模板替换/重复
+  占位/未知占位保留；fixture 字节解码逐点对照 fn（±0.06m 量化容差）、URL 传参、
+  畸形/缺失拒绝、**RGB fixture → camera 管线 → 出帧 → 拾取**端到端。当前 27 套件全绿。
+- 下一步：视锥精确剪枝 / 真实 PNG+HTTP（stb/curl）接入。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 

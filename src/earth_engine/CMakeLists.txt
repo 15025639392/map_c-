@@ -77,10 +77,20 @@ set(MAP_CAMERA_SOURCES
     camera/TerrainCameraPipeline.cpp
 )
 
+# providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源）。
+set(MAP_PROVIDERS_SOURCES
+    providers/TileUrlFormatter.h
+    providers/TileUrlFormatter.cpp
+    providers/ITileBytesSource.h
+    providers/TerrainRgbTileSource.h
+    providers/TerrainRgbTileSource.cpp
+)
+
 target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_MATH_SOURCES}
     ${MAP_CORE_GEODESY_SOURCES}
     ${MAP_TILING_SOURCES}
     ${MAP_CONTENT_SOURCES}
     ${MAP_CAMERA_SOURCES}
+    ${MAP_PROVIDERS_SOURCES}
 )
