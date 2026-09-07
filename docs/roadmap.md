@@ -236,6 +236,20 @@
 - 单测 +2（test_terrain_lod_selector）：窄视场剪掉更多瓦（细阈值下 >0 且 < 宽视场）、
   朝天视锥（带近平面）兴趣窗内全剪 → 空。32 套件全绿零告警。
 
+### Android 模拟器观感路线（2026-09-08 拍板，解锁观感判据）
+
+**平台**：Pixel_7_API_35 AVD（arm64，GLES 3.0，1080×2400，模拟器已在跑，adb emulator-5554）。
+
+| 里程碑 | 内容 | 验收 |
+|---|---|---|
+| A0 | core 交叉编译 android-arm64（NDK 28.2，CMake preset） | build/android-arm64 出 libearth_engine_core.a |
+| A1 | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧 |
+| A2 | 相机→选择→解码→网格（host 管线产物）上传 GLES 渲染单瓦 | 模拟器可见网格地形帧截图 |
+| A3 | 固定机位渲染（M-near/M-mid…）→ T-V* 观感初判 | 每机位截图入 docs，判据状态按口径回填 |
+| A4 | 并入 gis-md 现成地形服务（stage6-merge-checkpoint） | 整链对照 + 判据表逐条回填 |
+
+**判据口径不变**：【观感】像素判断归用户——模拟器截图提交后由用户拍板；本仓只钉机位与出图。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：
