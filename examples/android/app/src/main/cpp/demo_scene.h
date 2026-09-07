@@ -56,6 +56,7 @@ private:
     bool useImg_ = true;  // debug.mapc.img=1 → 卫星影像层（默认开）
     bool useLbl_ = true;  // debug.mapc.lbl=1 → 路网注记层（默认开）
     bool useHgt_ = false; // debug.mapc.hgt=1 → 高度纹理色带（GPU 位移数据链演示）
+    bool useDisp_ = false; // debug.mapc.disp=1 → 基准模板+位移向量属性（GPU 顶点位移）
     AAssetManager* assetManager_ = nullptr;
     double lastKey_[5] = {0, 0, 0, 0, 0};
 };

@@ -32,8 +32,11 @@ demo 场景与简易手势输入。
 | **S1** | **渲染/图形系统** | 无 RTC 渲染器、无 DrawList/材质系统、无**页存储/位移模板/高度纹理**、无帧缓冲/tonemap | 观感判据 T-V1~T-V14、T-P1/T-P13 全卡在此 | **L2 已落**：`renderer/IRenderDevice`（host 口径）+ demo 侧 **Gles3RenderDevice** 实现并换用 +
 高度纹理数值核（HeightTextureCodec）+ 模板核（DisplacementTemplate，host 对拍 <0.25m）——
 **设备位移实验（2026-09-09）**：GLES3 模拟器驱动下 vertex shader 纹理采样不可靠（位移几何异常），
-已回退；替代路径 = 每瓦 CPU 计算位移向量属性或 compute/ubershader 高度纹理采样——
-后续轮推进
+已回退；替代路径 = 位移向量属性通道（每瓦 CPU 计算位移向量、以 attribute4 上传，shader
+`p = aPos + aDisp`）——**已落地并通过模拟器像素对照**：基准椭球模板 + 位移属性上屏几何与
+baked 逐像素一致（disp1_station2.png vs baked0_station2.png：Δpx 75/2592000≈0.003%、
+单像素 Δ≤5/765、glErr=0x0），证明 attribute 通道位移机制成立；共享模板驱动的 vertex
+纹理采样位移（无逐瓦位移属性）仍为模拟器驱动受限面，登记为真机/后续轮路线
 模拟器经设备渲染出帧（glErr=0）；**DrawList-lite** 每瓦独立上传/绘制（draws=42/live=42）；
 **纹理通道已通**：Texture2D + UV sampler（合成棋盘叠影，distinct 877→937，upBytes 含
 UV/纹理账，截图 tex_overlay_Mmid.png）——影像同屏/GPU 高度纹理通道就绪；观感判据可测化打通 |

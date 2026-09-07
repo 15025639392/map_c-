@@ -85,6 +85,9 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
 - 机位：`adb shell setprop debug.mapc.station 1..5`（M-near/M-mid/M-graze/M-high/M-coarse）后重启 app。
 - 图层：`debug.mapc.img`（1=卫星影像 默认 / 0=高度着色）、`debug.mapc.lbl`（1=路网注记 默认 / 0=关）、
   `debug.mapc.hgt`（1=高度纹理色带——每瓦 512² 高度纹理 RGBA8 上传+shader 解码，GPU 位移数据链演示）。
+- GPU 顶点位移：`debug.mapc.disp`（1=基准椭球模板 + 逐瓦位移向量 attribute4，shader
+  `p=aPos+aDisp` 上屏 / 0=baked 烘焙位置默认）。像素对照证据：`docs/assets/disp1_station2.png`
+  vs `docs/assets/baked0_station2.png`（Δpx≈0.003%、glErr=0x0——属性通道位移与 baked 逐像素一致）。
 - 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
 - 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。
 - ASCII 缩略证据包：`docs/assets/evidence.md`（文本环境快速预览五机位）。

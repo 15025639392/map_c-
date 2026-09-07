@@ -126,14 +126,17 @@ const char* kVs =
     "uniform mat3 uViewRot;\n"
     "layout(location=2) in float aHei;\n"
     "layout(location=3) in vec2 aUv;\n"
+    "layout(location=4) in vec3 aDisp;\n"
+    "uniform int uDispMode; // 1 = 顶点位移属性通道：p = aPos + aDisp（基准椭球面 + 位移）\n"
     "out vec3 vNor;\n"
     "out float vHeight;\n"
     "out vec2 vUv;\n"
     "void main() {\n"
+    "  vec3 p = (uDispMode == 1) ? (aPos + aDisp) : aPos;\n"
     "  vNor = uViewRot * aNor;\n"
     "  vHeight = aHei;\n"
     "  vUv = aUv;\n"
-    "  gl_Position = uMvp * vec4(aPos, 1.0);\n"
+    "  gl_Position = uMvp * vec4(p, 1.0);\n"
     "}\n";
 
 const char* kFs =
@@ -237,10 +240,12 @@ void TerrainScene::initializeGl() {
     useImg_ = (__system_property_get("debug.mapc.img", imgProp) <= 0) || (imgProp[0] == '1');
     useLbl_ = (__system_property_get("debug.mapc.lbl", lblProp) <= 0) || (lblProp[0] == '1');
     char hgtProp[PROP_VALUE_MAX] = {0};
+    char dispProp[PROP_VALUE_MAX] = {0};
     useHgt_ = (__system_property_get("debug.mapc.hgt", hgtProp) > 0) && (hgtProp[0] == '1');
-    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d", useDem_ ? 1 : 0,
+    useDisp_ = (__system_property_get("debug.mapc.disp", dispProp) > 0) && (dispProp[0] == '1');
+    ALOG("dem mode=%d (assetMgr=%d) img=%d lbl=%d hgt=%d disp=%d", useDem_ ? 1 : 0,
          assetManager_ != nullptr ? 1 : 0, useImg_ ? 1 : 0, useLbl_ ? 1 : 0,
-         useHgt_ ? 1 : 0);
+         useHgt_ ? 1 : 0, useDisp_ ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -329,8 +334,13 @@ void TerrainScene::drawFrame() {
     device_->setUniformMat3("uViewRot", vr);
     device_->setUniformVec3("uLightDir", 0.25f, 0.55f, 0.80f);
     device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
+    // 位移通道模式：1 = GPU 顶点位移（p = aPos + aDisp）；0 = 常规烘焙位置。
+    device_->setUniformInt("uDispMode", useDisp_ ? 1 : 0);
     for (size_t i = 0; i < meshHandles_.size(); ++i) { // DrawList-lite：逐瓦绘制
-        if (useHgt_ && !tileTextures_.empty() && tileTextures_[i] != 0u) {
+        if (useDisp_) {
+            // disp 演示对照：片元走 vHeight 高度属性着色（与 baked 相同着色路径）。
+            device_->setUniformInt("uImageryMode", 0);
+        } else if (useHgt_ && !tileTextures_.empty() && tileTextures_[i] != 0u) {
             // 高度纹理模式（GPU 位移数据链演示：绝对编码 RGBA → shader 解码色带）。
             device_->bindTexture2D(0, tileTextures_[i]);
             device_->setUniformInt("uTex", 0);
@@ -629,6 +639,53 @@ void TerrainScene::ensureGeometry() {
     totalVertices_ = 0;
     unsigned int totalTriangles = 0;
     for (const auto& frame : frames) {
+        if (useDisp_) {
+            // GPU 位移属性通道：基准椭球面顶点 + 位移向量(顶点-基准) 分开放，
+            // 顶点位移在 GPU 完成（绕开 vertex 纹理采样驱动限制）。
+            const std::vector<Vec3>& positions = frame.mesh.positionsEcef;
+            const std::vector<Vec3>& normals = frame.mesh.normals;
+            if (positions.empty() || frame.mesh.indices.empty()) {
+                continue;
+            }
+            render::MeshUploadData md;
+            md.positions.reserve(positions.size() * 3);
+            md.normals.reserve(normals.size() * 3);
+            md.heights.reserve(positions.size());
+            md.uvs.reserve(positions.size() * 2);
+            md.displacements.reserve(positions.size() * 3);
+            const Vec2 tOrigin = scheme.tileOriginMeters(frame.key);
+            const Vec2 tSize = scheme.tileSizeMeters(frame.key.z());
+            for (size_t i = 0; i < positions.size(); ++i) {
+                const Cartographic c = e.cartesianToCartographic(positions[i]);
+                const Vec3 base = e.cartographicToCartesian(
+                    Cartographic(c.longitude(), c.latitude(), 0.0));
+                const Vec3 delta = positions[i] - base; // 位移向量（属性）
+                const Vec3 relBase = base - cameraPosCache_;
+                md.positions.push_back(static_cast<float>(relBase.x()));
+                md.positions.push_back(static_cast<float>(relBase.y()));
+                md.positions.push_back(static_cast<float>(relBase.z()));
+                md.normals.push_back(static_cast<float>(normals[i].x()));
+                md.normals.push_back(static_cast<float>(normals[i].y()));
+                md.normals.push_back(static_cast<float>(normals[i].z()));
+                md.heights.push_back(static_cast<float>(c.height()));
+                md.displacements.push_back(static_cast<float>(delta.x()));
+                md.displacements.push_back(static_cast<float>(delta.y()));
+                md.displacements.push_back(static_cast<float>(delta.z()));
+                const Vec2 meters = scheme.projectToMeters(c);
+                const double u = std::clamp((meters.x() - tOrigin.x()) / tSize.x(), 0.0, 1.0);
+                const double v = std::clamp(1.0 - (meters.y() - tOrigin.y()) / tSize.y(), 0.0, 1.0);
+                md.uvs.push_back(static_cast<float>(u));
+                md.uvs.push_back(static_cast<float>(v));
+            }
+            md.indices = frame.mesh.indices;
+            const uint32_t hd = device_->uploadMesh(md);
+            if (hd != 0u) {
+                meshHandles_.push_back(hd);
+                totalVertices_ += static_cast<int>(positions.size());
+                totalTriangles += static_cast<unsigned int>(frame.mesh.indices.size() / 3);
+            }
+            continue;
+        }
         const std::vector<Vec3>& positions = frame.mesh.positionsEcef;
         const std::vector<Vec3>& normals = frame.mesh.normals;
         if (positions.empty() || frame.mesh.indices.empty()) {
