@@ -90,6 +90,8 @@ set(MAP_CAMERA_SOURCES
     camera/Frustum.cpp
     camera/CameraMotion.h
     camera/CameraMotion.cpp
+    camera/TerrainGroundGuard.h
+    camera/TerrainGroundGuard.cpp
 )
 
 # providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。
@@ -105,6 +107,8 @@ set(MAP_PROVIDERS_SOURCES
     providers/TerrainRgbPngTileSource.cpp
     providers/TileCacheBytesSource.h
     providers/TileCacheBytesSource.cpp
+    providers/DiskTileCacheBytesSource.h
+    providers/DiskTileCacheBytesSource.cpp
 )
 
 # imagery：影像可用性/退化链语义（S4 先行；影像瓦/合成在渲染系统后）。
