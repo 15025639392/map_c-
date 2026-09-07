@@ -1,0 +1,88 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10.0"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "earth_engine_core",
+					"jsonFile" : "directory-earth_engine_core-Debug-bbd1841d0624f6db1f18.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10.0"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "/Users/yan/Desktop/work/map_cplus/src/earth_engine",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1
+					],
+					"name" : "mapcplus_terrain_demo",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "earth_engine_core::@9ef25db94365a335ec00",
+					"jsonFile" : "target-earth_engine_core-Debug-73a830bbe32b317aeb22.json",
+					"name" : "earth_engine_core",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "terrain_demo::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-terrain_demo-Debug-186793611b8626ef6134.json",
+					"name" : "terrain_demo",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+		"source" : "/Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 3
+	}
+}

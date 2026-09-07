@@ -1,0 +1,27 @@
+# ninja log v5
+3	179	1788790901418113119	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/QuadtreeGeometricError.cpp.o	1120c92829d6ae98
+4	502	1788790901741569336	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapCodec.cpp.o	de3330ca0a203cb5
+3	519	1788790901757382691	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Projection.cpp.o	23da87d2509de7e6
+2	528	1788790901771572659	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/math/Mat4.cpp.o	281ae40446ec01b
+4	547	1788790901788179102	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapSampler.cpp.o	ebafd3e832ce8171
+1	569	1788790901802998283	CMakeFiles/terrain_demo.dir/native_bridge.cpp.o	a7871e41b8a9cbd
+2	580	1788790901817683714	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Ellipsoid.cpp.o	887056eb001c76a9
+2	614	1788790901849959802	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/RayEllipsoid.cpp.o	7361fad974ff1d2f
+3	627	1788790901853423158	earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Transforms.cpp.o	8062e954db888481
+3	806	1788790902044381917	earth_engine_core/CMakeFiles/earth_engine_core.dir/tiling/WebMercatorTileScheme.cpp.o	a492997596487ddb
+180	898	1788790902140296258	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapTile.cpp.o	ce7059d6be5b433c
+569	1068	1788790902305516556	earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/CameraView.cpp.o	259b89deec6a824f
+617	1116	1788790902359554829	earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/Frustum.cpp.o	ce74abde50eebe32
+627	1203	1788790902443092755	earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TileUrlFormatter.cpp.o	df4768d2b1238cc1
+528	1365	1788790902590222142	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainPicking.cpp.o	36cdf719ea35daa
+3	1375	1788790902598208070	earth_engine_core/CMakeFiles/earth_engine_core.dir/tiling/TerrainLodSelector.cpp.o	17539989830712ce
+0	1392	1788790902623254819	CMakeFiles/terrain_demo.dir/demo_scene.cpp.o	9541dbe148f6cc0f
+580	1420	1788790902653583269	earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/TerrainCameraPipeline.cpp.o	addcec888fdee58
+519	1432	1788790902671073092	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainFrameAssembler.cpp.o	61e33695e38d8b17
+504	1433	1788790902671878223	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainTileMesh.cpp.o	9b7be30320ac28bb
+806	1495	1788790902738454995	earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TerrainRgbTileSource.cpp.o	109cd621e0a5d46e
+898	1594	1788790902833609498	earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/StbPngDecoder.cpp.o	d2f28234f8ec67cb
+1068	1634	1788790902875565525	earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TerrainRgbPngTileSource.cpp.o	439ed10d6c2f0c5e
+547	1637	1788790902875611816	earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainFrameCache.cpp.o	19b1861fd72aff4
+1637	1711	1788790902958218000	earth_engine_core/libearth_engine_core.a	1ad0854bf1a9b466
+1711	1791	1788790903024256922	/Users/yan/Desktop/work/map_cplus/examples/android/app/build/intermediates/cxx/Debug/286k5v33/obj/arm64-v8a/libterrain_demo.so	810272253c2d838a

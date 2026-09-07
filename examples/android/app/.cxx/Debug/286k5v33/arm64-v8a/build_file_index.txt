@@ -1,0 +1,2 @@
+/Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp/CMakeLists.txt
+/Users/yan/Desktop/work/map_cplus/src/earth_engine/CMakeLists.txt

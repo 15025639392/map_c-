@@ -1,0 +1,122 @@
+[
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -Dterrain_demo_EXPORTS -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -Wall -Wextra -Wpedantic -std=c++17 -o CMakeFiles/terrain_demo.dir/demo_scene.cpp.o -c /Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp/demo_scene.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp/demo_scene.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -Dterrain_demo_EXPORTS -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -Wall -Wextra -Wpedantic -std=c++17 -o CMakeFiles/terrain_demo.dir/native_bridge.cpp.o -c /Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp/native_bridge.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/examples/android/app/src/main/cpp/native_bridge.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/math/Mat4.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/math/Mat4.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/math/Mat4.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Ellipsoid.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Ellipsoid.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Ellipsoid.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/RayEllipsoid.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/RayEllipsoid.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/RayEllipsoid.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Projection.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Projection.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Projection.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/QuadtreeGeometricError.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/QuadtreeGeometricError.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/QuadtreeGeometricError.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/core/geodesy/Transforms.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Transforms.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/core/geodesy/Transforms.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/tiling/WebMercatorTileScheme.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/tiling/WebMercatorTileScheme.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/tiling/WebMercatorTileScheme.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/tiling/TerrainLodSelector.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/tiling/TerrainLodSelector.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/tiling/TerrainLodSelector.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapCodec.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapCodec.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapCodec.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapSampler.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapSampler.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapSampler.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/HeightmapTile.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapTile.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/HeightmapTile.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainTileMesh.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainTileMesh.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainTileMesh.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainFrameAssembler.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainFrameAssembler.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainFrameAssembler.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainPicking.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainPicking.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainPicking.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/content/TerrainFrameCache.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainFrameCache.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/content/TerrainFrameCache.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/CameraView.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/CameraView.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/CameraView.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/TerrainCameraPipeline.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/TerrainCameraPipeline.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/TerrainCameraPipeline.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/camera/Frustum.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/Frustum.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/camera/Frustum.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TileUrlFormatter.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TileUrlFormatter.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TileUrlFormatter.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TerrainRgbTileSource.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TerrainRgbTileSource.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TerrainRgbTileSource.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/StbPngDecoder.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/StbPngDecoder.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/StbPngDecoder.cpp"
+},
+{
+  "directory": "/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a",
+  "command": "/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++ --target=aarch64-none-linux-android26 --sysroot=/Users/yan/Library/Android/sdk/ndk/28.2.13676358/toolchains/llvm/prebuilt/darwin-x86_64/sysroot -I/Users/yan/Desktop/work/map_cplus/src/earth_engine/.. -isystem /Users/yan/Desktop/work/gis-md/scaffold/third_party/vcpkg/installed/arm64-osx/include -g -DANDROID -fdata-sections -ffunction-sections -funwind-tables -fstack-protector-strong -no-canonical-prefixes -D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security   -fno-limit-debug-info  -fPIC -std=c++17 -o earth_engine_core/CMakeFiles/earth_engine_core.dir/providers/TerrainRgbPngTileSource.cpp.o -c /Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TerrainRgbPngTileSource.cpp",
+  "file": "/Users/yan/Desktop/work/map_cplus/src/earth_engine/providers/TerrainRgbPngTileSource.cpp"
+}
+]
