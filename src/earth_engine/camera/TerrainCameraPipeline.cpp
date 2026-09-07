@@ -8,8 +8,13 @@ std::vector<TerrainFrameAssembler::Frame> assembleTerrainFrameForCamera(
     const ITerrainDataSource& source, const TerrainCameraPipelineConfig& config) {
     std::optional<Rectangle> footprint = camera.groundFootprintRadians(ellipsoid);
     if (!footprint) {
-        // 低俯仰/掠视时上角射线可能出太空：回退到相机正下区域（与 Android demo 同语义）。
+        // 仅在视线朝下（朝地球）时回退到相机正下区域：低俯仰/掠视上角射线
+        // 可能出太空；真正"往太空看"（fwd·n>0）保持空结果。
         const Cartographic cam = ellipsoid.cartesianToCartographic(camera.position());
+        const Vec3 n = ellipsoid.geodeticSurfaceNormal(cam);
+        if (camera.forward().dot(n) >= -0.1) {
+            return {};
+        }
         footprint = Rectangle::fromDegrees(radiansToDegrees(cam.longitude()) - 0.35,
                                            radiansToDegrees(cam.latitude()) - 0.25,
                                            radiansToDegrees(cam.longitude()) + 0.35,
