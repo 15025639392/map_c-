@@ -122,6 +122,7 @@
 | **带重叠环源（borderInset=0.5，cell-registered + 1px 邻瓦回填）采样能力**（B2，gis-md 514 语义转写）：内缩半像元采样使共享边界读到两侧同一批世界样本 → 帧级同级共享边 ECEF ≈0（SeamAudit 门禁） | **T-V5 机制闭合路径**（assets 为无环源 → 接线项 = 解码侧回填环或换带环源；判据观感仍待用户） | test_ring_source_seam |
 | **祖先回退数据源（调度-lite）**：缺瓦沿父链上溯（默认 4 层）取最近祖先栅格**重采样到请求瓦**（父数据、子几何占位）→ 帧不因单瓦缺失/瞬时解码失败出洞；任意层无数据时仍 nullopt 不冒充 | T-V12/T-E2/T-E4 家族（换代/缺瓦体面的调度前身；roadmap「缺失瓦跳过（祖先回退属调度阶段）」缺口已落 host 半） | test_ancestor_fallback |
 | 响应体魔数白名单（PNG/JPEG/WebP + 12B 下限，网络硬化差值表项） | 接真实网络源的毒体防御（CDN 200+NoSuchKey XML 挡在解码入口前；gis-md ImageTileBodyCheck 转写） | test_image_tile_body_check |
+| **真实 DEM 相机帧（M-near 型正下 3km/z13）**：真实资产经全管线（256 栅格 → LOD → 网格 → 拾取，命中海拔 50–900m）host 可复现——模拟器 demo 的 host 替身，观感/帧统计可离线回归 | 固定验收机位输入侧（模拟器观感的前置回归面） | test_terrarium_asset_decode |
 | 高程基准改正接入路径（undulation 逐样本叠加装饰器；恒等默认零拷贝、哨兵不改） | engine-targets §6 口径（±100 m 正高偏差的机制侧；椭球高 = 正高 + undulation） | test_height_datum_correcting_source |
 | **跨级 T-顶点裂缝度量（B4 前身取证）**：粗瓦边 = 过其顶点的直线弦折线，落在粗弦段间的子瓦 T-顶点（真实表面点）与粗弦的 ECEF 偏差 = 换代裂缝。实测（z12/z13 fixture，强地形曲率 K=2e8/rad²）：粗瓦 2 段 → ~7m、8 段 → ~1.1m（≈按段长平方衰减）；**线性场（无地形曲率）→ 仅椭球曲率弦垂 ~0.1m**（平坦地形跨级也有裂缝！）。**B4 吸附数值原型已证闭合**：snapChildBoundariesToCoarse（子瓦边界顶点投影吸附到粗弦，拓扑不变）→ 审计 max <1e-6m | T-V5 跨级半边 / T-V12 换代族（机制量化 + CPU 拼帧数值内核；渲染/调度域落地前） | test_cross_level_tvertex |
 

@@ -12,12 +12,17 @@
 #include <string>
 #include <vector>
 
+#include "earth_engine/camera/CameraView.h"
+#include "earth_engine/camera/TerrainCameraPipeline.h"
 #include "earth_engine/content/HeightmapCodec.h"
 #include "earth_engine/content/HeightmapTile.h"
 #include "earth_engine/content/SeamAudit.h"
+#include "earth_engine/content/TerrainDataSource.h"
 #include "earth_engine/content/TerrainFrameAssembler.h"
+#include "earth_engine/content/TerrainPicking.h"
 #include "earth_engine/content/TerrainTileMesh.h"
 #include "earth_engine/core/geodesy/Ellipsoid.h"
+#include "earth_engine/core/math/MathUtils.h"
 #include "earth_engine/providers/StbPngDecoder.h"
 #include "earth_engine/tiling/TileKey.h"
 #include "earth_engine/tiling/WebMercatorTileScheme.h"
@@ -67,6 +72,29 @@ TerrainFrameAssembler::Frame makeFrame(const WebMercatorTileScheme& scheme, cons
     frame.mesh = TerrainTileMeshBuilder().build(tile, Ellipsoid::WGS84(), 32);
     return frame;
 }
+
+// 真实资产数据源（Android DemAssetSource 的 host 形态）：瓦 PNG → Terrarium 栅格。
+// 资产栅格固定 256×256（与 dem_assets 一致）；请求其他尺寸返回 nullopt。
+class RealDemAssetSource : public ITerrainDataSource {
+public:
+    std::optional<TerrainGrid> requestHeights(const WebMercatorTileScheme&,
+                                              const TileKey& key, int gridSize) const override {
+        if (gridSize != 256) {
+            return std::nullopt;
+        }
+        const std::string path = kAssetsRoot + key.toString() + ".png";
+        int size = 0;
+        const auto h = decodeTerrariumTile(path, size);
+        if (!h) {
+            return std::nullopt;
+        }
+        TerrainGrid grid;
+        grid.width = size;
+        grid.height = size;
+        grid.heights = *h;
+        return grid;
+    }
+};
 
 bool tileExists(const std::string& rel) { return readFile(kAssetsRoot + rel).has_value(); }
 
@@ -146,4 +174,45 @@ TEST(TerrariumAssetSeam, RealZ12EdgeGapCoarserLarger) {
     // z12 像元更粗 → 边差均值更大（实测 3.9–4.7m vs z13 1.8m）。
     EXPECT_GT(audit.meanMeters, 1.0);
     EXPECT_LT(audit.meanMeters, 25.0);
+}
+
+// ---- 相机管线级：真实 DEM 帧（M-near 型正下机位，模拟器 demo 的 host 替身）----
+
+TEST(TerrariumAssetPipeline, CameraFrameOverRealDemPicksPlausibleHeight) {
+    const WebMercatorTileScheme scheme;
+    const Ellipsoid& ellipsoid = Ellipsoid::WGS84();
+    if (!tileExists("13/6518/3387.png")) {
+        GTEST_SKIP() << "真实资产缺失";
+    }
+    // M-near 型：缙云山中心上空 3km 正下（高度带 → z13）。
+    const Cartographic center = Cartographic::fromDegrees(106.44, 29.70, 0.0);
+    const Vec3 pos = ellipsoid.cartographicToCartesian(
+        Cartographic(center.longitude(), center.latitude(), 3000.0));
+    const Vec3 up = ellipsoid.geodeticSurfaceNormal(center);
+    const CameraView camera(pos, ellipsoid.cartographicToCartesian(center), up,
+                            degreesToRadians(60.0), 4.0 / 3.0);
+
+    TerrainCameraPipelineConfig config;
+    config.lod.maxScreenSpaceErrorPx = 8.0;
+    config.lod.maxLevel = 13; // 资产到 z13（与 demo 高度带一致）
+    config.gridSize = 256;    // 资产栅格固定 256²
+    config.nodesPerEdge = 16;
+
+    const RealDemAssetSource source;
+    const auto frames = assembleTerrainFrameForCamera(scheme, camera, ellipsoid, source, config);
+    ASSERT_FALSE(frames.empty());
+    // 正下点被覆盖（中心瓦 z13 在资产内）。
+    const auto hit = pickTerrainFrame(camera.rayThroughNdc(0.0, 0.0).origin(),
+                                      camera.rayThroughNdc(0.0, 0.0).direction(), frames);
+    ASSERT_TRUE(hit.has_value());
+    const Cartographic hitCarto = ellipsoid.cartesianToCartographic(hit->point);
+    // 缙云山脚 100–700m 量级（机位中心实测瓦 159–456）。
+    EXPECT_GT(hitCarto.height(), 50.0);
+    EXPECT_LT(hitCarto.height(), 900.0);
+
+    // 帧内同级共享边如出现：T-V5 账本 —— 真实数据未闭合（mean > 0.2m 档）。
+    const SeamAuditResult audit = auditSameLevelSharedEdges(frames);
+    if (audit.comparedNodePairs > 0) {
+        EXPECT_GT(audit.meanMeters, 0.0);
+    }
 }
