@@ -45,6 +45,7 @@
 | HeightDatumCorrectingDataSource（undulation 逐样本叠加，EGM96 接入路径） | content/HeightDatumCorrectingDataSource.{h,cpp} |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
 | auditSameLevelSharedEdges / SeamAuditResult（同级共享边审计） | content/SeamAudit.{h,cpp} |
+| auditCrossLevelTVertexGap（跨级 T-顶点裂缝度量，B4 前身） | content/SeamAudit.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |
 | pickTerrainFrame / TerrainPickHit | content/TerrainPicking.{h,cpp} |
 
@@ -72,7 +73,8 @@
 `tiling/`：tile_key、tile_scheme、terrain_lod_selector；
 `content/`：heightmap_codec、heightmap_sampler、heightmap_tile、terrain_tile_mesh、
 terrain_frame_assembler、ancestor_fallback（祖先回退/调度-lite）、seam_audit、
-ring_source_seam（B2 环源闭合）、terrain_cross_level、terrain_picking、
+ring_source_seam（B2 环源闭合）、cross_level_tvertex（B4 T-顶点取证）、
+terrain_cross_level、terrain_picking、
 terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
 `camera/`：camera_view、frustum、terrain_camera_pipeline；
