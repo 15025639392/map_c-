@@ -42,6 +42,11 @@ public:
     /// 中心点（投影米）。
     Vec2 tileCenterMeters(const TileKey& key) const;
 
+    /// 经纬 → 投影米（Web Mercator，纬度按 scheme 世界钳制）。
+    Vec2 projectToMeters(const Cartographic& cartographic) const;
+    /// 投影米 → 经纬（高度 0）。
+    Cartographic unprojectMeters(const Vec2& positionMeters) const;
+
 private:
     Ellipsoid ellipsoid_;
     WebMercatorProjection projection_;

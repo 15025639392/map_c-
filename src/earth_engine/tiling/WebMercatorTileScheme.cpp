@@ -76,4 +76,12 @@ Vec2 WebMercatorTileScheme::tileCenterMeters(const TileKey& key) const {
     return origin + size * 0.5;
 }
 
+Vec2 WebMercatorTileScheme::projectToMeters(const Cartographic& cartographic) const {
+    return projection_.project(cartographic);
+}
+
+Cartographic WebMercatorTileScheme::unprojectMeters(const Vec2& positionMeters) const {
+    return projection_.unproject(positionMeters);
+}
+
 } // namespace earth_engine
