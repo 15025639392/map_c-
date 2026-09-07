@@ -126,8 +126,21 @@
 - 单测 +1 套件（test_terrain_lod_selector）：远相机（300km,16px→z3~4 少量瓦）、
   近相机（1.5km,4px→z13）、中心点覆盖、maxLevel 无 runaway、世界外空集、确定性。
   当前 19 套件全绿。
-- 下一步：把 HeightmapTile+TerrainTileMesh 挂到选择结果上（选中瓦 → 解码 → 网格），
-  形成可跑的 host"地形帧"；再往后是相机/拾取与 Provider。
+
+### 地形帧总装（2026-09-08，阶段 6 装配前身）
+
+- `content/TerrainDataSource.h`——`TerrainGrid`（解码栅格）+ `ITerrainDataSource` 接口
+  （按瓦返回高度栅格；nullopt = 瓦不可用）。**将来并入 gis-md 现成地形服务 =
+  给它适配一个实现**，装配与几何代码不动。
+- `content/TerrainFrameAssembler.{h,cpp}`——把 `TerrainLodResult` 喂给数据源，
+  每瓦：解码 → HeightmapTile（mercator 米查高）→ TerrainTileMesh（ECEF 网格），
+  产出 `Frame{key, mesh, min/maxHeight}`；缺失瓦跳过（祖先回退属调度阶段）。
+- 单测 +1 套件（test_terrain_frame_assembler）：真实选择结果装配、手工 3 邻瓦
+  （A+东/南）装配后**跨帧同层共享边 ECEF 逐点重合**、flaky 源缺失瓦跳过、
+  确定性。当前 20 套件全绿。
+- **host"地形帧"主链路已闭环**：LOD 选择 → 解码 → 查高 → 无缝网格。
+  下一步：相机模型/拾取（让"地形帧"有真正的视锥/画面输入）、
+  或 Provider+HTTP（引入 curl 依赖）。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
