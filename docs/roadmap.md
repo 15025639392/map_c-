@@ -245,7 +245,7 @@
 | A0 ✅ | core 交叉编译 android-arm64（NDK 28.2，CMake preset） | build/android-arm64 出 libearth_engine_core.a |
 | A1 ✅ | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧（全帧 (26,41,71)=glClearColor；见 docs/assets/a1_gles_clear.png，帧号递增 log） |
 | A1 | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧 |
-| A2 | 相机→选择→解码→网格（host 管线产物）上传 GLES 渲染单瓦 | 模拟器可见网格地形帧截图 |
+| A2 ✅ | host 管线产物（相机→选择→解码→网格）GLES 渲染 | 模拟器 logcat `geometry ready: tiles=25 vertices=7225 triangles=12800`；截图 docs/assets/a2_terrain_rendered*.png（天空区=clear 色与地形区分离）；坡面细节调参属 A3 观感 |
 | A3 | 固定机位渲染（M-near/M-mid…）→ T-V* 观感初判 | 每机位截图入 docs，判据状态按口径回填 |
 | A4 | 并入 gis-md 现成地形服务（stage6-merge-checkpoint） | 整链对照 + 判据表逐条回填 |
 

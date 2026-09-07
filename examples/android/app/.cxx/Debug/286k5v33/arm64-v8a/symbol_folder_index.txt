@@ -1,1 +1,0 @@
-/Users/yan/Desktop/work/map_cplus/examples/android/app/build/intermediates/cxx/Debug/286k5v33/obj/arm64-v8a

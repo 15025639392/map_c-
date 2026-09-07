@@ -1,6 +1,0 @@
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/CMakeFiles/terrain_demo.dir
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/CMakeFiles/edit_cache.dir
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/CMakeFiles/rebuild_cache.dir
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/earth_engine_core/CMakeFiles/earth_engine_core.dir
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/earth_engine_core/CMakeFiles/edit_cache.dir
-/Users/yan/Desktop/work/map_cplus/examples/android/app/.cxx/Debug/286k5v33/arm64-v8a/earth_engine_core/CMakeFiles/rebuild_cache.dir
