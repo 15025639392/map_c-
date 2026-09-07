@@ -242,7 +242,8 @@
 
 | 里程碑 | 内容 | 验收 |
 |---|---|---|
-| A0 | core 交叉编译 android-arm64（NDK 28.2，CMake preset） | build/android-arm64 出 libearth_engine_core.a |
+| A0 ✅ | core 交叉编译 android-arm64（NDK 28.2，CMake preset） | build/android-arm64 出 libearth_engine_core.a |
+| A1 ✅ | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧（全帧 (26,41,71)=glClearColor；见 docs/assets/a1_gles_clear.png，帧号递增 log） |
 | A1 | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧 |
 | A2 | 相机→选择→解码→网格（host 管线产物）上传 GLES 渲染单瓦 | 模拟器可见网格地形帧截图 |
 | A3 | 固定机位渲染（M-near/M-mid…）→ T-V* 观感初判 | 每机位截图入 docs，判据状态按口径回填 |
