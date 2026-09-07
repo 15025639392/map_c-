@@ -38,6 +38,8 @@ set(MAP_CORE_GEODESY_SOURCES
     core/geodesy/Projection.cpp
     core/geodesy/QuadtreeGeometricError.h
     core/geodesy/QuadtreeGeometricError.cpp
+    core/geodesy/HeightDatumCorrector.h
+    core/geodesy/HeightDatumCorrector.cpp
     core/geodesy/Transforms.h
     core/geodesy/Transforms.cpp
 )

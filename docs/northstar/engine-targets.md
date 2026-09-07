@@ -67,8 +67,10 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
   TerrainTileMesh 及 host 测试（含同/跨级共享边 ECEF ±1e-6 m）。
 - **数据侧（已知偏差，显式记录）**：terrarium/terrain-RGB 等 DEM 的高度是
   EGM96 **正高（大地水准面起算）**；当前按椭球高近似渲染，未加大地水准面差距
-  （全球 ±100 m 量级）。修正位置 = HeightmapTile 上游加 undulation（如 EGM96 网格）
-  插值后再入网格；暂不启用（推荐：现状 + 记录偏差）。
+  （全球 ±100 m 量级）。**改正槽已落地（2026-09-08）**：`core/geodesy/
+  HeightDatumCorrector`（Identity 默认 / GridHeightDatumCorrector 经纬网格双线性，
+  host 单测绿）；EGM96 网格接入后经 `HeightmapTile` 上游叠加即启用，暂不默认启用
+  （现状 + 记录偏差口径不变）。
 - **gis-md 并入姿态（用户询问后重申）**：按目标条款③在阶段 6 选择性并入
   gis-md 现成地形服务（解码/查高/调度件 → 适配到 ITerrainDataSource 等接口），
   渲染与自写机制保留；不整体 vendor 16 万行 core。
