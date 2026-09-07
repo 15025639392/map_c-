@@ -44,11 +44,13 @@ map_cplus/
 └── tests/unit/                          # gtest：core/geodesy/tiling/content/camera/providers
 ```
 
-## 当前状态（2026-09-08）
+## 当前状态（2026-09-09 复核）
 
-**41 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
+**41 个 gtest 套件全绿零告警**（2026-09-09 干净复核：`build/native-tests` 从零配置重建
+41/41、全新 clone（HEAD `bd2a867`）41/41、android-arm64 core 从零重建通过、零告警）。
+host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
-拾取，外加帧缓存增量、同级共享边审计（`SeamAudit`）、**带重叠环源采样（borderInset, B2）**
+拾取，外加帧缓存增量、同级/跨级共享边审计（`SeamAudit`）、**带重叠环源采样（borderInset, B2）**
 与固定机位基线。
 **A4 并入已开工（B1+B2 切片）**：Terrain-RGB nodata 哨兵语义（隐式注册 -10000 /
 min-max 排除 / 采样哨兵角归一化）已落入既有解码链（单实现）；带环源同级边闭合

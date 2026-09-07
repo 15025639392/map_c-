@@ -3,6 +3,10 @@
 # map_cplus 本地构建环境（host native）。
 # 用法：source env.sh   （或直接 ./test_native.sh，脚本内部会 source 本文件）
 #
+# 注意：android-arm64 preset 的 CMake configure（build/android-arm64）还依赖
+# `ANDROID_NDK_HOME` 指向本机 NDK（如 ~/Library/Android/sdk/ndk/28.2.13676358）——
+# env.sh 只负责 host 工具链，不设 NDK；干净重建 android 前请手动 export。
+#
 # 本文件只负责"找到本机已有的构建工具"，不下载任何东西：
 #   1. cmake / ninja：优先 Android SDK 自带（本机已装 3.22.1）；
 #      否则退回 PATH。
