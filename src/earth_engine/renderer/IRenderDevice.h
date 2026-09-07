@@ -39,12 +39,25 @@ struct ProgramSource {
 /// - 状态机：drawMesh 需要"已上传且未释放的网格句柄 + 当前已绑定的 program"，
 ///   否则为使用错误（实现应防御记录/断言，不崩溃）；
 /// - uniform/视口/清屏为最近值语义（实现记录最后调用）。
+/// 2D 纹理上传描述（RGBA8，逐行，首行=顶；宽高 ≥1）。
+struct Texture2DData {
+    int width = 0;
+    int height = 0;
+    std::vector<uint8_t> rgba8;
+
+    bool valid() const {
+        return width > 0 && height > 0 &&
+               rgba8.size() == static_cast<size_t>(width) * height * 4;
+    }
+};
+
 /// 渲染统计（H2 性能记账第一笔账：北极星"每字节/每三角形有账"）。
 struct DrawStats {
     uint64_t drawCalls = 0;      // 累计 drawMesh 成功次数
     uint64_t trianglesDrawn = 0; // 累计绘制三角形数
-    uint64_t uploadedBytes = 0;  // 累计上传字节（position+normal+height+index）
+    uint64_t uploadedBytes = 0;  // 累计上传字节（position+normal+height+index+texture）
     uint32_t liveMeshes = 0;     // 当前驻留网格数（资源账）
+    uint32_t liveTextures = 0;   // 当前驻留纹理数（资源账）
 };
 
 class IRenderDevice {
@@ -58,6 +71,12 @@ public:
     virtual uint32_t uploadMesh(const MeshUploadData& mesh) = 0;
     virtual void releaseMesh(uint32_t handle) = 0;
 
+    // -- 2D 纹理（RGBA8；影像瓦 / 高度纹理的通道） --
+    virtual uint32_t createTexture2D(const Texture2DData& data) = 0;
+    virtual void releaseTexture(uint32_t handle) = 0;
+    /// 绑定纹理到采样单元（unit 0..15）；0 = 解绑该单元。
+    virtual void bindTexture2D(uint32_t unit, uint32_t handle) = 0;
+
     // -- 着色器程序 --
     virtual uint32_t createProgram(const ProgramSource& source) = 0;
     virtual void releaseProgram(uint32_t handle) = 0;
@@ -69,6 +88,8 @@ public:
     /// mat3（列主序 9 float，法线旋转等）。
     virtual void setUniformMat3(const char* name, const float* mat3x3) = 0;
     virtual void setUniformVec3(const char* name, float x, float y, float z) = 0;
+    /// 整数 uniform（纹理 sampler 等）。
+    virtual void setUniformInt(const char* name, int value) = 0;
     virtual void setViewport(int widthPx, int heightPx) = 0;
     virtual void clearColor(float r, float g, float b, float a) = 0;
 

@@ -18,6 +18,35 @@ namespace {
 /// badXxx 计数，不崩溃）。
 class HostTraceRenderDevice final : public IRenderDevice {
 public:
+    uint32_t createTexture2D(const Texture2DData& data) override {
+        ++createTextureCount_;
+        if (!data.valid()) {
+            return 0;
+        }
+        const uint32_t h = nextTexture_++;
+        textures_.insert(h);
+        lastCreatedTexture_ = h;
+        stats_.uploadedBytes += static_cast<uint64_t>(data.width) * data.height * 4u;
+        stats_.liveTextures = static_cast<uint32_t>(textures_.size());
+        return h;
+    }
+    void releaseTexture(uint32_t handle) override {
+        ++releaseTextureCount_;
+        textures_.erase(handle);
+        stats_.liveTextures = static_cast<uint32_t>(textures_.size());
+    }
+    void bindTexture2D(uint32_t unit, uint32_t handle) override {
+        ++bindTextureCount_;
+        if (handle != 0 && textures_.count(handle) == 0) {
+            ++badBindTexture_;
+            return;
+        }
+        if (handle == 0) {
+            boundTextures_.erase(unit);
+        } else {
+            boundTextures_[unit] = handle;
+        }
+    }
     uint32_t uploadMesh(const MeshUploadData& mesh) override {
         ++uploadCount_;
         if (!mesh.valid()) {
@@ -80,6 +109,11 @@ public:
             lastMat3_[i] = mat3x3[i];
         }
     }
+    void setUniformInt(const char* name, int value) override {
+        ++uniformIntCount_;
+        lastUniformIntName_ = name ? name : "";
+        lastUniformIntValue_ = value;
+    }
     void setUniformVec3(const char* name, float x, float y, float z) override {
         ++uniformVec3Count_;
         lastUniformVec3Name_ = name ? name : "";
@@ -121,6 +155,10 @@ public:
 
     // 计数与最近值。
     int uploadCount_ = 0;
+    int createTextureCount_ = 0;
+    int releaseTextureCount_ = 0;
+    int bindTextureCount_ = 0;
+    int badBindTexture_ = 0;
     int releaseMeshCount_ = 0;
     int createProgramCount_ = 0;
     int releaseProgramCount_ = 0;
@@ -128,6 +166,7 @@ public:
     int badUseProgram_ = 0;
     int uniformMat4Count_ = 0;
     int uniformMat3Count_ = 0;
+    int uniformIntCount_ = 0;
     int uniformVec3Count_ = 0;
     int viewportCount_ = 0;
     int clearCount_ = 0;
@@ -135,6 +174,8 @@ public:
     int badDraws_ = 0;
     uint32_t nextMesh_ = 1;
     uint32_t nextProgram_ = 1;
+    uint32_t nextTexture_ = 1;
+    uint32_t lastCreatedTexture_ = 0;
     uint32_t lastUploaded_ = 0;
     uint32_t lastCreatedProgram_ = 0;
     uint32_t boundProgram_ = 0;
@@ -150,10 +191,14 @@ public:
     std::string lastUniformMat4Name_;
     std::string lastUniformMat3Name_;
     std::string lastUniformVec3Name_;
+    std::string lastUniformIntName_;
+    int lastUniformIntValue_ = 0;
+    std::unordered_map<uint32_t, uint32_t> boundTextures_; // unit -> handle
 
 private:
     std::set<uint32_t> meshes_;
     std::set<uint32_t> programs_;
+    std::set<uint32_t> textures_;
 };
 
 MeshUploadData makeMesh() {
@@ -162,6 +207,14 @@ MeshUploadData makeMesh() {
     m.normals = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f};
     m.indices = {0, 1, 2};
     return m;
+}
+
+Texture2DData makeTexture(int w = 2, int h = 2) {
+    Texture2DData t;
+    t.width = w;
+    t.height = h;
+    t.rgba8.assign(static_cast<size_t>(w) * h * 4, 255);
+    return t;
 }
 
 ProgramSource makeProgram() {
@@ -255,6 +308,31 @@ TEST(RenderDevice, DrawStatsLedgerAccumulates) {
     dev.drawMesh(m); // 死句柄：不记账
     EXPECT_EQ(dev.stats().drawCalls, 2u);
     EXPECT_EQ(dev.badDraws_, 1);
+}
+
+TEST(RenderDevice, TextureLifecycleAndStats) {
+    HostTraceRenderDevice dev;
+    Texture2DData bad;
+    EXPECT_EQ(dev.createTexture2D(bad), 0u); // 无效数据 → 0
+    const auto t = dev.createTexture2D(makeTexture(2, 2)); // 16 bytes
+    EXPECT_NE(t, 0u);
+    EXPECT_EQ(dev.stats().liveTextures, 1u);
+    EXPECT_EQ(dev.stats().uploadedBytes, 16u); // 仅纹理（无网格上传）
+    dev.bindTexture2D(0, t);
+    EXPECT_EQ(dev.bindTextureCount_, 1);
+    dev.bindTexture2D(0, 0); // 解绑
+    dev.bindTexture2D(0, 999u); // 死纹理 → 防御
+    EXPECT_EQ(dev.badBindTexture_, 1);
+    dev.releaseTexture(t);
+    EXPECT_EQ(dev.stats().liveTextures, 0u);
+}
+
+TEST(RenderDevice, UniformIntRecorded) {
+    HostTraceRenderDevice dev;
+    dev.setUniformInt("uTex", 0);
+    EXPECT_EQ(dev.uniformIntCount_, 1);
+    EXPECT_EQ(dev.lastUniformIntName_, "uTex");
+    EXPECT_EQ(dev.lastUniformIntValue_, 0);
 }
 
 TEST(RenderDevice, UniformViewportClearRecorded) {
