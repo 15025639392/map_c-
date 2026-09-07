@@ -30,8 +30,9 @@ public:
         render::Texture2DData texture;
     };
 
+    /// @param keepAlpha true 时按 RGBA 解码保留 alpha（透明叠加层如路网注记）。
     ImageryTileSource(const ITileBytesSource& bytesSource, std::string urlTemplate,
-                      std::function<bool(const TileKey&)> hasData);
+                      std::function<bool(const TileKey&)> hasData, bool keepAlpha = false);
 
     std::optional<Result> fetchTexture(const TileKey& request) const;
 
@@ -39,6 +40,7 @@ private:
     const ITileBytesSource& bytesSource_;
     std::string urlTemplate_;
     std::function<bool(const TileKey&)> hasData_;
+    bool keepAlpha_ = false;
 };
 
 } // namespace earth_engine

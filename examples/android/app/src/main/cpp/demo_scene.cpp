@@ -143,7 +143,9 @@ const char* kFs =
     "uniform vec3 uLightDir;\n"
     "uniform vec3 uBaseColor;\n"
     "uniform sampler2D uTex;\n"
+    "uniform sampler2D uLabel;\n"
     "uniform int uImageryMode; // 1 = 卫星影像作 albedo（高德）；0 = 高度着色\n"
+    "uniform int uHasLabel;    // 1 = 有路网注记叠加层（单位 1）\n"
     "in float vHeight;\n"
     "in vec2 vUv;\n"
     "void main() {\n"
@@ -153,6 +155,10 @@ const char* kFs =
     "  vec3 albedo;\n"
     "  if (uImageryMode == 1) {\n"
     "    albedo = texture(uTex, vUv).rgb;\n"
+    "    if (uHasLabel == 1) {\n"
+    "      vec4 lbl = texture(uLabel, vUv);\n"
+    "      albedo = mix(albedo, lbl.rgb, lbl.a);\n"
+    "    }\n"
     "  } else {\n"
     "    float t = clamp((vHeight - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
     "    vec3 low  = vec3(0.35, 0.48, 0.25);\n"
@@ -185,10 +191,16 @@ void TerrainScene::destroyGlObjects() {
                 device_->releaseTexture(th);
             }
         }
+        for (uint32_t th : labelTextures_) {
+            if (th != 0u) {
+                device_->releaseTexture(th);
+            }
+        }
     }
     programHandle_ = 0;
     textureHandle_ = 0;
     tileTextures_.clear();
+    labelTextures_.clear();
     meshHandles_.clear();
     device_.reset();
     geometryReady_ = false;
@@ -308,7 +320,18 @@ void TerrainScene::drawFrame() {
                 device_->bindTexture2D(0, th);
                 device_->setUniformInt("uTex", 0);
                 device_->setUniformInt("uImageryMode", 1);
+                const uint32_t lh = i < labelTextures_.size() ? labelTextures_[i] : 0u;
+                if (lh != 0u) {
+                    device_->bindTexture2D(1, lh);
+                    device_->setUniformInt("uLabel", 1);
+                    device_->setUniformInt("uHasLabel", 1);
+                } else {
+                    device_->bindTexture2D(1, 0u);
+                    device_->setUniformInt("uHasLabel", 0);
+                }
             } else {
+                device_->bindTexture2D(1, 0u);
+                device_->setUniformInt("uHasLabel", 0);
                 device_->setUniformInt("uImageryMode", 0);
             }
         }
@@ -460,6 +483,13 @@ void TerrainScene::ensureGeometry() {
                 "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}";
             ImageryTileSource imagery(amapCache, amapUrl,
                                       [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; });
+            // 路网注记层：style=8 RGBA PNG（alpha 合成；同瓦同缓存）。
+            TileCacheBytesSource lblCache(amapRaw, 512);
+            const char* amapLabelUrl =
+                "https://webst01.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}";
+            ImageryTileSource labelImagery(lblCache, amapLabelUrl,
+                                           [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; },
+                                           /*keepAlpha=*/true);
             int level = bandLevelForAltitudeMeters(camAltMeters_);
             if (level > 12) {
                 level = 12;
@@ -473,6 +503,8 @@ void TerrainScene::ensureGeometry() {
             // 每瓦真实影像纹理（字节走同一缓存 → 单次下载；S4→渲染全链）。
             tileTextures_.clear();
             tileTextures_.reserve(frames.size());
+            labelTextures_.clear();
+            labelTextures_.reserve(frames.size());
             for (const auto& f : frames) {
                 const auto tr = imagery.fetchTexture(f.key);
                 const uint32_t th =
@@ -481,6 +513,11 @@ void TerrainScene::ensureGeometry() {
                     ALOG("imagery texture miss tile %s", f.key.toString().c_str());
                 }
                 tileTextures_.push_back(th);
+                // 路网注记（alpha 保留；缺失 → 0，标注关闭）。
+                const auto lr = labelImagery.fetchTexture(f.key);
+                labelTextures_.push_back(lr.has_value()
+                                             ? device_->createTexture2D(lr->texture)
+                                             : 0u);
             }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
@@ -493,6 +530,7 @@ void TerrainScene::ensureGeometry() {
             const int demNodes = (level >= 13) ? 65 : 33; // 近景(L13)网格加密
             frames = buildDemFrames(scheme, demSource, bandRect, e, level, demNodes, 256);
             tileTextures_.clear();
+            labelTextures_.clear();
             ALOG("dem asset band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
         }
@@ -518,6 +556,7 @@ void TerrainScene::ensureGeometry() {
             frames.push_back(DemFrame{frame.key, frame.mesh});
         }
         tileTextures_.clear(); // 合成源无影像纹理
+        labelTextures_.clear();
     }
     if (frames.empty()) {
         ALOGE("ensureGeometry: no frames assembled");

@@ -29,8 +29,10 @@ private:
     uint32_t textureHandle_ = 0; // 合成"影像瓦"棋盘（纹理管线验证）
     // 每瓦一个设备网格句柄（DrawList-lite：逐瓦上传/绘制/账本到瓦级）。
     std::vector<uint32_t> meshHandles_;
-    // NASA 模式的每瓦真实纹理（与 meshHandles_ 对齐；0 = 缺失回退棋盘）。
+    // NASA 模式的每瓦真实纹理（与 meshHandles_ 对齐；0 = 缺失回退高度着色）。
     std::vector<uint32_t> tileTextures_;
+    // 高德路网注记叠加层（与 meshHandles_ 对齐；0 = 无标注）。
+    std::vector<uint32_t> labelTextures_;
     bool geometryReady_ = false;
     int width_ = 1080;
     int height_ = 2400;

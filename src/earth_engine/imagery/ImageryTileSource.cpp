@@ -7,10 +7,12 @@ namespace earth_engine {
 
 ImageryTileSource::ImageryTileSource(const ITileBytesSource& bytesSource,
                                      std::string urlTemplate,
-                                     std::function<bool(const TileKey&)> hasData)
+                                     std::function<bool(const TileKey&)> hasData,
+                                     bool keepAlpha)
     : bytesSource_(bytesSource),
       urlTemplate_(std::move(urlTemplate)),
-      hasData_(std::move(hasData)) {}
+      hasData_(std::move(hasData)),
+      keepAlpha_(keepAlpha) {}
 
 std::optional<ImageryTileSource::Result> ImageryTileSource::fetchTexture(
     const TileKey& request) const {
@@ -24,7 +26,9 @@ std::optional<ImageryTileSource::Result> ImageryTileSource::fetchTexture(
     if (!bytes) {
         return std::nullopt;
     }
-    std::optional<render::Texture2DData> tex = PngToRgba8::decode(bytes->data(), bytes->size());
+    std::optional<render::Texture2DData> tex =
+        keepAlpha_ ? PngToRgba8::decodeKeepAlpha(bytes->data(), bytes->size())
+                   : PngToRgba8::decode(bytes->data(), bytes->size());
     if (!tex) {
         return std::nullopt;
     }
