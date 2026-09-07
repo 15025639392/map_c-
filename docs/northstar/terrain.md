@@ -122,6 +122,7 @@
 | **带重叠环源（borderInset=0.5，cell-registered + 1px 邻瓦回填）采样能力**（B2，gis-md 514 语义转写）：内缩半像元采样使共享边界读到两侧同一批世界样本 → 帧级同级共享边 ECEF ≈0（SeamAudit 门禁） | **T-V5 机制闭合路径**（assets 为无环源 → 接线项 = 解码侧回填环或换带环源；判据观感仍待用户） | test_ring_source_seam |
 | **祖先回退数据源（调度-lite）**：缺瓦沿父链上溯（默认 4 层）取最近祖先栅格**重采样到请求瓦**（父数据、子几何占位）→ 帧不因单瓦缺失/瞬时解码失败出洞；任意层无数据时仍 nullopt 不冒充 | T-V12/T-E2/T-E4 家族（换代/缺瓦体面的调度前身；roadmap「缺失瓦跳过（祖先回退属调度阶段）」缺口已落 host 半） | test_ancestor_fallback |
 | 响应体魔数白名单（PNG/JPEG/WebP + 12B 下限，网络硬化差值表项） | 接真实网络源的毒体防御（CDN 200+NoSuchKey XML 挡在解码入口前；gis-md ImageTileBodyCheck 转写） | test_image_tile_body_check |
+| 高程基准改正接入路径（undulation 逐样本叠加装饰器；恒等默认零拷贝、哨兵不改） | engine-targets §6 口径（±100 m 正高偏差的机制侧；椭球高 = 正高 + undulation） | test_height_datum_correcting_source |
 
 **固定机位 host 基线（本机 2026-09-08，M-mid 型：camH 15km 斜视，8px/scale=1e-3，
 fn=500+300·sin·cos，重庆 106.44E 29.70N）**：

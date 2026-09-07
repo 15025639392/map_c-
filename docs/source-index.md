@@ -42,6 +42,7 @@
 | TerrainMeshData / TerrainTileMeshBuilder | content/TerrainTileMesh.{h,cpp} |
 | ITerrainDataSource / TerrainGrid（heights + noDataValues + borderInset） | content/TerrainDataSource.h |
 | AncestorFallbackDataSource（缺瓦祖先回退 + 重采样，调度-lite） | content/AncestorFallbackDataSource.{h,cpp} |
+| HeightDatumCorrectingDataSource（undulation 逐样本叠加，EGM96 接入路径） | content/HeightDatumCorrectingDataSource.{h,cpp} |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
 | auditSameLevelSharedEdges / SeamAuditResult（同级共享边审计） | content/SeamAudit.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |

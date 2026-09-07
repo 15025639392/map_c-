@@ -3,10 +3,10 @@
 > 给下一位会话/用户的一页指引。仓库/远端同步（36+ 提交，HEAD=origin/main）。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 39/39 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
+- Host：`./test_native.sh` → 40/40 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
   PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+
   同级共享边审计（SeamAudit）+ 带环源 seam 闭合（B2 切片）+ 祖先回退（调度-lite）+
-  响应体魔数检查（网络硬化）+ 五固定机位回归）。
+  响应体魔数检查 + 高程基准改正接入路径 + 五固定机位回归）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
@@ -35,10 +35,12 @@
    （资源轴记账）→ borderInset/514 重叠环采样（cell-registered 源语义 + 无缝逐位对拍，
    接 B4 边吸附地基）；每步 host 单测 + 基线。
 2. **观感调优**（30–60 min/项）：构图/法线/光照/网格密度 → 改 `demo_scene.cpp` 重建重截图。
-3. **EGM96 undulation**：`core/geodesy/HeightDatumCorrector` 已备（网格双线性+单测）；
-   下载 EGM96 网格接入 `HeightmapTile` 上游即启用（当前默认恒等、口径已记录）。
+3. **EGM96 undulation（机制已备，剩数据文件）**：`HeightDatumCorrector`（网格双线性+单测）
+   与接入装饰器 `HeightDatumCorrectingDataSource`（host 40 套件含测试）都已落地；
+   下载 EGM96 网格（NGA/GeographicLib；本沙箱外网不可达未成）→ 装载文件 → 喂给
+   GridHeightDatumCorrector + 装饰器即启用；设备出帧后定默认开关。
 4. **真实网络源**：`CurlBytesSource` host 已通（回环实测）；设备侧接公网 terrarium 需
-   处理模拟器网络/配额（顺带把 ImageTileBodyCheck 响应体硬化带上），assets 方式已是离线等价。
+   处理模拟器网络/配额（响应体魔数检查已入链），assets 方式已是离线等价。
 
 ## 决策点清单（一句话即可触发）
 - 「station N 的 X 要改」→ 我调 A3.2；
