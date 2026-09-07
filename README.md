@@ -67,4 +67,5 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
 - 机位：`adb shell setprop debug.mapc.station 1..5`（M-near/M-mid/M-graze/M-high/M-coarse）后重启 app。
 - 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
 - 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。
+- ASCII 缩略证据包：`docs/assets/evidence.md`（文本环境快速预览五机位）。
 
