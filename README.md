@@ -95,7 +95,8 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   属性通道位移与 baked 逐像素一致。
 - 引擎相机制（L3）：`debug.mapc.nav`（1=手势走引擎 MapCameraSystem：惯性滑行/贴地防护/flyTo/
   中心平移，重启生效；0=默认 Java 直连基线，像素不变）——`src/earth_engine/camera/MapCameraSystem.{h,cpp}`
-  host 语义（14 用例，58/58）。手势（nav=1）：Java 只转发原始触摸流，**识别在引擎
+  host 语义（16 用例，58/58；含 LOD 感知灵敏度包络：近地面操纵降速、远距离全速）。
+  手势（nav=1）：Java 只转发原始触摸流，**识别在引擎
   `interaction/PointerGestureRecognizer`**（host 7 用例）：单指拖动=俯仰/航向、双指拖动=平移、
   双指张拢=缩放。
   设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`

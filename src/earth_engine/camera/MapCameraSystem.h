@@ -43,6 +43,13 @@ public:
         double flyToSeconds = 2.5;         // flyTo 时长（秒）
         double fovRadians = 1.0471975511965976; // 视场角（60°；平移像素→地面米换算用）
         double maxPanRateMetersPerSec = 8000.0; // 平移速率上限（防跑飞）
+        /// LOD 感知灵敏度包络（视距 ≈ 相机高度上的乘法衰减；防近地面操纵过猛/穿地加速）。
+        struct LodSpeed {
+            double nearMeters = 3000.0; // ≤ 此高度 → minFactor
+            double farMeters = 8000.0;  // ≥ 此高度 → 1.0（线性过渡）
+            double minFactor = 0.35;
+        };
+        LodSpeed lodSpeed;
     };
 
     struct Pose {

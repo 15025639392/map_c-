@@ -244,7 +244,11 @@ TEST(MapCameraSystem, PanDisplacementIsProportionalToPixels) {
 }
 
 TEST(MapCameraSystem, PanIntoHigherGroundIsClampedToClearance) {
-    MapCameraSystem cam;
+    MapCameraSystem::Params params; // 本用例只测平移×贴地语义：关 LOD 包络（恒 factor 1）
+    params.lodSpeed.nearMeters = 0.0;
+    params.lodSpeed.farMeters = 0.0;
+    params.lodSpeed.minFactor = 1.0;
+    MapCameraSystem cam(params);
     cam.setPose(makePose(106.40, 29.70, 600.0, 45.0, 0.0)); // 低地起手，高度 600
     // 地表：lon < 106.45 → 200m；lon ≥ 106.45 → 1500m（高地）。
     const double ridgeLonRad = degreesToRadians(106.45);
@@ -318,4 +322,61 @@ TEST(MapCameraSystem, PanDeterministicSameInputsSamePose) {
     EXPECT_DOUBLE_EQ(a.altitudeMeters, b.altitudeMeters);
     EXPECT_DOUBLE_EQ(a.headingRad, b.headingRad);
     EXPECT_DOUBLE_EQ(a.pitchRad, b.pitchRad);
+}
+
+// ---------------------------------------------------------------------------
+// L3 线②：LOD 感知灵敏度包络（近地面操纵降速；远距离全速）。
+// ---------------------------------------------------------------------------
+namespace {
+/// 相同旋转拖动序列的总航向变化（起于 heading 0；不经 settle，避免衰减尾部差异）。
+double runRotateAtAltitude(double altMeters) {
+    MapCameraSystem cam;
+    cam.setPose(makePose(106.44, 29.70, altMeters, 45.0, 0.0));
+    cam.setGroundFn(flatGround(0.0));
+    for (int i = 0; i < 30; ++i) {
+        cam.setGesture(3.0, 0.0, 1.0, 1080.0); // 等量拖动
+        cam.step(0.016);
+    }
+    double h = cam.pose().headingRad;
+    if (h > 3.141592653589793) {
+        h -= 6.283185307179586;
+    }
+    return std::fabs(h);
+}
+} // namespace
+
+TEST(MapCameraSystem, LodEnvelopeSlowsRotationNearGround) {
+    const double nearAlt = 1200.0; // ≤ lodSpeed.near(3000) → minFactor 0.35
+    const double farAlt = 50000.0; // ≥ lodSpeed.far(8000) → 1.0
+    const double nearDelta = runRotateAtAltitude(nearAlt);
+    const double farDelta = runRotateAtAltitude(farAlt);
+    EXPECT_GT(farDelta, 0.0);
+    EXPECT_GT(nearDelta, 0.0);
+    // 同一拖动序列：近地面航向增量 ≈ minFactor × 远距离增量。
+    EXPECT_NEAR(nearDelta / farDelta, 0.35, 0.05);
+}
+
+TEST(MapCameraSystem, LodEnvelopeConfigurable) {
+    MapCameraSystem::Params params;
+    params.lodSpeed.nearMeters = 5000.0;
+    params.lodSpeed.farMeters = 10000.0;
+    params.lodSpeed.minFactor = 0.5;
+    auto run = [&params](double altMeters) {
+        MapCameraSystem cam(params);
+        cam.setPose(makePose(106.44, 29.70, altMeters, 45.0, 0.0));
+        cam.setGroundFn(flatGround(0.0));
+        for (int i = 0; i < 30; ++i) {
+            cam.setGesture(2.0, 0.0, 1.0, 1080.0);
+            cam.step(0.016);
+        }
+        double h = cam.pose().headingRad;
+        if (h > 3.141592653589793) {
+            h -= 6.283185307179586;
+        }
+        return std::fabs(h);
+    };
+    const double low = run(2000.0); // < near5000 → 0.5
+    const double high = run(30000.0); // > far10000 → 1.0
+    EXPECT_GT(high, 0.0);
+    EXPECT_NEAR(low / high, 0.5, 0.05);
 }

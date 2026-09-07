@@ -24,6 +24,17 @@ double wrapDeltaRad(double d) {
 }
 double smoothStep(double t) { return t * t * (3.0 - 2.0 * t); }
 double clampAbs(double v, double bound) { return std::clamp(v, -bound, bound); }
+/// LOD 感知灵敏度包络：视距(distance) ≤ near → min；≥ far → 1；之间线性。
+double lodFactor(double distanceMeters, double nearMeters, double farMeters, double minFactor) {
+    if (distanceMeters <= nearMeters) {
+        return minFactor;
+    }
+    if (distanceMeters >= farMeters) {
+        return 1.0;
+    }
+    const double t = (distanceMeters - nearMeters) / (farMeters - nearMeters);
+    return minFactor + (1.0 - minFactor) * t;
+}
 
 bool isFinite(double v) { return std::isfinite(v); }
 } // namespace
@@ -158,9 +169,12 @@ void MapCameraSystem::step(double dtSeconds) {
             if (gDxPx_ != 0.0 || gDyPx_ != 0.0 || gScale_ != 1.0) {
                 const GestureRates rates =
                     gestureMapper_.compute(gDxPx_, gDyPx_, gScale_, gScreenHeightPx_, dtSeconds);
-                state_.yawRateRadPerSec = rates.yawRateRadPerSec;
-                state_.pitchRateRadPerSec = rates.pitchRateRadPerSec;
-                state_.distRateMetersPerSec = rates.distRateMetersPerSec;
+                const double f = lodFactor(state_.distanceMeters, params_.lodSpeed.nearMeters,
+                                           params_.lodSpeed.farMeters,
+                                           params_.lodSpeed.minFactor);
+                state_.yawRateRadPerSec = rates.yawRateRadPerSec * f;
+                state_.pitchRateRadPerSec = rates.pitchRateRadPerSec * f;
+                state_.distRateMetersPerSec = rates.distRateMetersPerSec * f;
             } else {
                 // 按住但无增量：制动（不残留惯性速率）。
                 state_.yawRateRadPerSec = 0.0;
@@ -184,8 +198,11 @@ void MapCameraSystem::step(double dtSeconds) {
                 // 右向 ENU：(cy,-sy)；屏幕上向地面水平投影方向 (sy,cy)，米/px=mpp·sp。
                 const double eastRaw = gPanDxPx_ * cy + gPanDyPx_ * sp * sy;
                 const double northRaw = -gPanDxPx_ * sy + gPanDyPx_ * sp * cy;
-                panEastRateMps_ = -eastRaw * mpp / dtSeconds;
-                panNorthRateMps_ = -northRaw * mpp / dtSeconds;
+                const double f = lodFactor(state_.distanceMeters, params_.lodSpeed.nearMeters,
+                                           params_.lodSpeed.farMeters,
+                                           params_.lodSpeed.minFactor);
+                panEastRateMps_ = -eastRaw * mpp * f / dtSeconds;
+                panNorthRateMps_ = -northRaw * mpp * f / dtSeconds;
             } else {
                 // 按住但无增量：平移轴制动。
                 panEastRateMps_ = 0.0;
