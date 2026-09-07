@@ -20,3 +20,10 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_mapcplus_terrain_NativeRenderer_nativeDrawFrame(JNIEnv*, jclass) {
     gScene.drawFrame();
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeSetCamera(JNIEnv*, jclass, jdouble lonDeg,
+                                                          jdouble latDeg, jdouble altMeters,
+                                                          jdouble pitchDeg, jdouble headingDeg) {
+    gScene.setCamera(lonDeg, latDeg, altMeters, pitchDeg, headingDeg);
+}

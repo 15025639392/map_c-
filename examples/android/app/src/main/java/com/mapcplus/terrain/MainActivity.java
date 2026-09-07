@@ -14,6 +14,7 @@ public class MainActivity extends Activity {
         // GLES 3 上下文（A2 起地形渲染需要）。
         glView.setEGLContextClientVersion(3);
         glView.setRenderer(new NativeRenderer());
+        glView.setOnTouchListener(new CameraTouchController());
         setContentView(glView);
     }
 

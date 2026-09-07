@@ -14,6 +14,7 @@
 
 #include <earth_engine/camera/CameraView.h>
 #include <earth_engine/camera/Frustum.h>
+#include <earth_engine/core/geodesy/Transforms.h>
 #include <earth_engine/content/HeightmapTile.h>
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/content/TerrainFrameAssembler.h>
@@ -277,10 +278,37 @@ void TerrainScene::drawFrame() {
     }
 }
 
+void TerrainScene::setCamera(double lonDeg, double latDeg, double altMeters,
+                             double pitchDeg, double headingDeg) {
+    camLonDeg_ = lonDeg;
+    camLatDeg_ = latDeg;
+    camAltMeters_ = altMeters;
+    camPitchDeg_ = pitchDeg;
+    camHeadingDeg_ = headingDeg;
+    cameraUserSet_ = true;
+    geometryReady_ = false; // 强制重建几何
+    ALOG("setCamera lon=%.4f lat=%.4f alt=%.0f pitch=%.1f hdg=%.1f", lonDeg, latDeg,
+         altMeters, pitchDeg, headingDeg);
+}
+
 void TerrainScene::ensureGeometry() {
     const Ellipsoid& e = Ellipsoid::WGS84();
-    const Cartographic center = Cartographic::fromDegrees(106.44, 29.70, 0.0);
+    const Cartographic center = Cartographic::fromDegrees(camLonDeg_, camLatDeg_, 0.0);
     cameraUpCache_ = e.geodeticSurfaceNormal(center);
+    const double key[5] = {camLonDeg_, camLatDeg_, camAltMeters_, camPitchDeg_, camHeadingDeg_};
+    bool sameCamera = true;
+    for (int i = 0; i < 5; ++i) {
+        if (std::fabs(key[i] - lastKey_[i]) > 1.0e-9) {
+            sameCamera = false;
+            break;
+        }
+    }
+    if (sameCamera && geometryReady_) {
+        return; // 相机未变：复用已上传几何
+    }
+    for (int i = 0; i < 5; ++i) {
+        lastKey_[i] = key[i];
+    }
 
     TerrainLodConfig lod;
     lod.viewportHeightPx = static_cast<double>(std::min(width_, height_));
@@ -288,35 +316,43 @@ void TerrainScene::ensureGeometry() {
     lod.geometricErrorScale = 0.001;
     lod.maxLevel = 16;
 
-    // 固定机位（近似 docs/northstar/terrain.md 验收机位；观感归用户拍板）。
-    double altMeters = 15000.0;
-    double dLonDeg = 0.08;
-    double dLatDeg = -0.05;
-    switch (station_) {
+    // 相机参数：station 预设为初值；之后可由 Java 手势（nativeSetCamera）改写。
+    double altMeters = camAltMeters_;
+    double pitchDeg = camPitchDeg_;
+    double hdgDeg = camHeadingDeg_;
+    if (!cameraUserSet_) {
+        switch (station_) {
         case 1: // M-near 3000m pitch −60
-            altMeters = 3000.0;
-            dLonDeg = 0.012;
-            dLatDeg = -0.009;
+            camAltMeters_ = altMeters = 3000.0;
+            camPitchDeg_ = pitchDeg = 60.0;
+            camHeadingDeg_ = hdgDeg = 200.0;
             lod.maxScreenSpaceErrorPx = 0.8;
             lod.maxLevel = 17;
             break;
         case 2: // M-mid 15000m pitch −45
-            altMeters = 15000.0;
-            dLonDeg = 0.08;
-            dLatDeg = -0.05;
+            camAltMeters_ = altMeters = 15000.0;
+            camPitchDeg_ = pitchDeg = 45.0;
+            camHeadingDeg_ = hdgDeg = 200.0;
             lod.maxScreenSpaceErrorPx = 3.0;
             break;
         default: // M-graze 8000m pitch −10（近掠视）
-            altMeters = 8000.0;
-            dLonDeg = 0.6;
-            dLatDeg = -0.25;
+            camAltMeters_ = altMeters = 8000.0;
+            camPitchDeg_ = pitchDeg = 10.0;
+            camHeadingDeg_ = hdgDeg = 200.0;
             lod.maxScreenSpaceErrorPx = 4.0;
             break;
+        }
     }
     cameraPosCache_ = e.cartographicToCartesian(
         Cartographic(center.longitude(), center.latitude(), altMeters));
-    cameraTargetCache_ = e.cartographicToCartesian(Cartographic::fromDegrees(
-        center.longitude() + dLonDeg, center.latitude() + dLatDeg, 0.0));
+    // 视线方向（ENU 局部）：hdg 0=北；pitch=相对地平线向下角。
+    const double hdg = hdgDeg * degreesToRadians(1.0);
+    const double pit = pitchDeg * degreesToRadians(1.0);
+    const Vec3 dirEnu(std::sin(hdg) * std::cos(pit), std::cos(hdg) * std::cos(pit),
+                      -std::sin(pit));
+    const Mat4 enu = Transforms::eastNorthUpToFixedFrame(
+        Cartographic(center.longitude(), center.latitude(), 0.0), e);
+    cameraTargetCache_ = enu.transformPoint(dirEnu * 200000.0);
 
     const CameraView camera(cameraPosCache_, cameraTargetCache_, cameraUpCache_,
                             degreesToRadians(60.0), 1.0);
