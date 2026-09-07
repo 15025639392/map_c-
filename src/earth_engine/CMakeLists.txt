@@ -70,6 +70,8 @@ set(MAP_CONTENT_SOURCES
     content/TerrainFrameAssembler.cpp
     content/AncestorFallbackDataSource.h
     content/AncestorFallbackDataSource.cpp
+    content/HeightDatumCorrectingDataSource.h
+    content/HeightDatumCorrectingDataSource.cpp
     content/SeamAudit.h
     content/SeamAudit.cpp
     content/TerrainPicking.h
