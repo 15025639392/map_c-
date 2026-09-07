@@ -11,8 +11,11 @@
 #include <earth_engine/core/math/Vec3.h>
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/interaction/PointerGestureRecognizer.h>
+#include <earth_engine/providers/TileCacheBytesSource.h>
 #include <earth_engine/renderer/IRenderDevice.h>
 #include <earth_engine/scene/LayerStack.h>
+
+#include "dem_assets.h"
 
 namespace demoscene {
 
@@ -83,6 +86,13 @@ private:
     double lastKey_[5] = {0, 0, 0, 0, 0};
     // S3：引擎图层栈（图层开关的事实源；绘制序 dem→imagery→label→debug）。
     earth_engine::scene::LayerStack layerStack_;
+
+    // S2：跨相机重建的持久瓦片字节缓存（网络下载去重；重建只补新瓦）。
+    // 声明顺序 = 析构逆序：raw 最后销毁（缓存持其引用）。
+    std::unique_ptr<earth_engine::TileCacheBytesSource> ringBytesCache_;
+    std::unique_ptr<earth_engine::TileCacheBytesSource> amapBytesCache_;
+    std::unique_ptr<earth_engine::TileCacheBytesSource> labelBytesCache_;
+    std::unique_ptr<NasaHttpBytesSource> rawBytesSource_;
 
     // L3 导航（引擎 MapCameraSystem；默认关 → 基线手势直连不变）。
     bool navEnabled_ = false;

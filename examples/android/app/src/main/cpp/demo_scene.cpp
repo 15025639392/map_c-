@@ -285,6 +285,15 @@ void TerrainScene::initializeGl() {
         }
         ALOG("layer stack: %s", order.c_str());
     }
+
+    // S2：持久瓦片字节缓存（跨相机重建；网络下载去重，重建只补新瓦）。
+    rawBytesSource_ = std::make_unique<NasaHttpBytesSource>();
+    ringBytesCache_ =
+        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+    amapBytesCache_ =
+        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+    labelBytesCache_ =
+        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -562,8 +571,14 @@ std::optional<double> TerrainScene::guardGroundHeightRad(double lonRad, double l
     if (!guardKey_.has_value() || guardKey_.value() != key.value() || guardGrid_.empty()) {
         std::optional<TerrainGrid> grid;
         if (nasa) {
-            NasaRingDemSource ring;
-            grid = ring.source.requestHeights(scheme, key.value(), 512);
+            // S2：guard 查高瓦走同一持久 ring 字节缓存（与重建瓦去重下载）。
+            if (!ringBytesCache_) {
+                return std::nullopt;
+            }
+            TerrainRgbPngTileSource ring(*ringBytesCache_,
+                                         NasaRingDemSource::kNasaUrlTemplate,
+                                         /*cellRegisteredRing=*/true, 6, 12);
+            grid = ring.requestHeights(scheme, key.value(), 512);
         } else {
             DemAssetSource dem(assetManager_);
             grid = dem.requestHeights(scheme, key.value(), 256);
@@ -818,24 +833,21 @@ void TerrainScene::ensureGeometry() {
         }
         if (nasa) {
             // NASA Terrain-RGB 514 带环源（z6–12；近景受源上限 z12 约束）。
-            // 高度栅格与影像纹理共享同一瓦片缓存（S2 去重：同 URL 单次下载）。
-            NasaHttpBytesSource rawBytes;
-            TileCacheBytesSource cacheBytes(rawBytes, 512);
-            TerrainRgbPngTileSource ringSource(cacheBytes, NasaRingDemSource::kNasaUrlTemplate,
+            // S2：字节缓存为**持久成员**（跨相机重建）——重建只对未缓存瓦发网络，
+            // 同 URL 单次下载（高度栅格/影像/注记三路共享底层字节源）。
+            TerrainRgbPngTileSource ringSource(*ringBytesCache_,
+                                               NasaRingDemSource::kNasaUrlTemplate,
                                                /*cellRegisteredRing=*/true, 6, 12);
             // 影像内容 = 高德卫星（JPEG 256，XYZ；固定子域先行）。
-            NasaHttpBytesSource amapRaw;
-            TileCacheBytesSource amapCache(amapRaw, 512);
             const char* amapUrl =
                 "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}";
-            ImageryTileSource imagery(amapCache, amapUrl,
+            ImageryTileSource imagery(*amapBytesCache_, amapUrl,
                                       [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; });
             const bool wantImg = useImg_;
             // 路网注记层：style=8 RGBA PNG（alpha 合成；同瓦同缓存）。
-            TileCacheBytesSource lblCache(amapRaw, 512);
             const char* amapLabelUrl =
                 "https://webst01.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}";
-            ImageryTileSource labelImagery(lblCache, amapLabelUrl,
+            ImageryTileSource labelImagery(*labelBytesCache_, amapLabelUrl,
                                            [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; },
                                            /*keepAlpha=*/true);
             int level = bandLevelForAltitudeMeters(camAltMeters_);
@@ -906,6 +918,17 @@ void TerrainScene::ensureGeometry() {
             }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
+            ALOG("S2 cache ring(hit=%llu miss=%llu n=%zu) amap(hit=%llu miss=%llu n=%zu) "
+                 "label(hit=%llu miss=%llu n=%zu)",
+                 static_cast<unsigned long long>(ringBytesCache_->hitCount()),
+                 static_cast<unsigned long long>(ringBytesCache_->missCount()),
+                 ringBytesCache_->entryCount(),
+                 static_cast<unsigned long long>(amapBytesCache_->hitCount()),
+                 static_cast<unsigned long long>(amapBytesCache_->missCount()),
+                 amapBytesCache_->entryCount(),
+                 static_cast<unsigned long long>(labelBytesCache_->hitCount()),
+                 static_cast<unsigned long long>(labelBytesCache_->missCount()),
+                 labelBytesCache_->entryCount());
             if (frames.empty() && assetManager_ != nullptr) {
                 ALOGE("nasa tiles empty (net?) — 离线回退: adb shell setprop debug.mapc.src asset");
             }

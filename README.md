@@ -100,7 +100,9 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   手势（nav=1）：Java 只转发原始触摸流，**识别在引擎
   `interaction/PointerGestureRecognizer`**（host 7 用例）：单指拖动=俯仰/航向、双指拖动=平移、
   双指张拢=缩放。
-  设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`
+  设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`；
+  S2 字节缓存跨重建持久化：logcat `S2 cache ring(hit=.. miss=..)` 显示重建只补新瓦
+  （R1 miss42 → R3 miss72 但 hit20/20；NASA 源重建网络请求从全量降为个位数）。
   （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住、pan lon 106.440→106.404）。
 - 飞行/平移探针（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`
   （lon,lat,alt,pitch,heading；改值重触发；目标高度低于地表会被贴地抬升到净空之上）；
