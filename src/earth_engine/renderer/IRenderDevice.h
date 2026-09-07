@@ -39,9 +39,20 @@ struct ProgramSource {
 /// - 状态机：drawMesh 需要"已上传且未释放的网格句柄 + 当前已绑定的 program"，
 ///   否则为使用错误（实现应防御记录/断言，不崩溃）；
 /// - uniform/视口/清屏为最近值语义（实现记录最后调用）。
+/// 渲染统计（H2 性能记账第一笔账：北极星"每字节/每三角形有账"）。
+struct DrawStats {
+    uint64_t drawCalls = 0;      // 累计 drawMesh 成功次数
+    uint64_t trianglesDrawn = 0; // 累计绘制三角形数
+    uint64_t uploadedBytes = 0;  // 累计上传字节（position+normal+height+index）
+    uint32_t liveMeshes = 0;     // 当前驻留网格数（资源账）
+};
+
 class IRenderDevice {
 public:
     virtual ~IRenderDevice() = default;
+
+    /// 当前累计渲染/资源统计（实现持续维护；测试与性能账本用）。
+    virtual DrawStats stats() const = 0;
 
     // -- 网格 --
     virtual uint32_t uploadMesh(const MeshUploadData& mesh) = 0;

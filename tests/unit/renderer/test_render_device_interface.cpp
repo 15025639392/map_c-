@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "earth_engine/renderer/IRenderDevice.h"
@@ -25,11 +26,19 @@ public:
         const uint32_t h = nextMesh_++;
         meshes_.insert(h);
         lastUploaded_ = h;
+        meshIndexCounts_[h] = mesh.indices.size();
+        stats_.uploadedBytes += mesh.positions.size() * sizeof(float) +
+                                mesh.normals.size() * sizeof(float) +
+                                mesh.heights.size() * sizeof(float) +
+                                mesh.indices.size() * sizeof(uint32_t);
+        stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
         return h;
     }
     void releaseMesh(uint32_t handle) override {
         ++releaseMeshCount_;
         meshes_.erase(handle);
+        meshIndexCounts_.erase(handle);
+        stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
     }
     uint32_t createProgram(const ProgramSource& source) override {
         ++createProgramCount_;
@@ -97,8 +106,15 @@ public:
         const bool programOk = boundProgram_ != 0;
         if (!meshOk || !programOk) {
             ++badDraws_; // 使用错误防御：计数暴露，不崩溃
+            return;
+        }
+        stats_.drawCalls += 1;
+        const auto it = meshIndexCounts_.find(handle);
+        if (it != meshIndexCounts_.end()) {
+            stats_.trianglesDrawn += it->second / 3;
         }
     }
+    DrawStats stats() const override { return stats_; }
 
     size_t liveMeshCountForTest() const { return meshes_.size(); }
     size_t liveProgramCountForTest() const { return programs_.size(); }
@@ -123,6 +139,8 @@ public:
     uint32_t lastCreatedProgram_ = 0;
     uint32_t boundProgram_ = 0;
     uint32_t lastDrawn_ = 0;
+    DrawStats stats_; // 性能账口径
+    std::unordered_map<uint32_t, size_t> meshIndexCounts_;
     int lastViewportW_ = 0;
     int lastViewportH_ = 0;
     float lastClear_[4] = {0, 0, 0, 0};
@@ -217,6 +235,26 @@ TEST(RenderDevice, UniformMat3Recorded) {
     EXPECT_EQ(dev.uniformMat3Count_, 1);
     EXPECT_EQ(dev.lastUniformMat3Name_, "uViewRot");
     EXPECT_EQ(dev.lastMat3_[8], 1.0f);
+}
+
+TEST(RenderDevice, DrawStatsLedgerAccumulates) {
+    HostTraceRenderDevice dev;
+    const auto p = dev.createProgram(makeProgram());
+    dev.useProgram(p);
+    const auto m = dev.uploadMesh(makeMesh()); // 9 float ×3 通道 + 3 idx
+    dev.drawMesh(m);
+    dev.drawMesh(m);
+    const DrawStats s0 = dev.stats();
+    EXPECT_EQ(s0.drawCalls, 2u);
+    EXPECT_EQ(s0.trianglesDrawn, 2u); // 每 draw 1 三角形
+    EXPECT_EQ(s0.liveMeshes, 1u);
+    // 上传字节 = pos 9f*4 + nor 9f*4 + (heights 空) + idx 3u32*4 = 84。
+    EXPECT_EQ(s0.uploadedBytes, 9u * 4u + 9u * 4u + 3u * 4u);
+    dev.releaseMesh(m);
+    EXPECT_EQ(dev.stats().liveMeshes, 0u);
+    dev.drawMesh(m); // 死句柄：不记账
+    EXPECT_EQ(dev.stats().drawCalls, 2u);
+    EXPECT_EQ(dev.badDraws_, 1);
 }
 
 TEST(RenderDevice, UniformViewportClearRecorded) {

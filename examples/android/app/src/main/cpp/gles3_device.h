@@ -19,6 +19,8 @@ class Gles3RenderDevice final : public earth_engine::render::IRenderDevice {
 public:
     ~Gles3RenderDevice() override;
 
+    earth_engine::render::DrawStats stats() const override { return stats_; }
+
     uint32_t uploadMesh(const earth_engine::render::MeshUploadData& mesh) override;
     void releaseMesh(uint32_t handle) override;
     uint32_t createProgram(const earth_engine::render::ProgramSource& source) override;
@@ -46,6 +48,8 @@ private:
     };
 
     GLint uniformLocation(Program& prog, const char* name);
+
+    earth_engine::render::DrawStats stats_;
 
     uint32_t nextMesh_ = 1;
     uint32_t nextProgram_ = 1;

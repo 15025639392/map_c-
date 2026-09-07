@@ -96,6 +96,11 @@ uint32_t Gles3RenderDevice::uploadMesh(const earth_engine::render::MeshUploadDat
 
     const uint32_t handle = nextMesh_++;
     meshes_.emplace(handle, m);
+    stats_.uploadedBytes += mesh.positions.size() * sizeof(float) +
+                            mesh.normals.size() * sizeof(float) +
+                            mesh.heights.size() * sizeof(float) +
+                            mesh.indices.size() * sizeof(uint32_t);
+    stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
     return handle;
 }
 
@@ -111,6 +116,7 @@ void Gles3RenderDevice::releaseMesh(uint32_t handle) {
     if (m.vboHei) glDeleteBuffers(1, &m.vboHei);
     if (m.ebo) glDeleteBuffers(1, &m.ebo);
     meshes_.erase(it);
+    stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
 }
 
 uint32_t Gles3RenderDevice::createProgram(const earth_engine::render::ProgramSource& source) {
@@ -225,6 +231,8 @@ void Gles3RenderDevice::drawMesh(uint32_t handle) {
     glBindVertexArray(itMesh->second.vao);
     glDrawElements(GL_TRIANGLES, itMesh->second.indexCount, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
+    stats_.drawCalls += 1;
+    stats_.trianglesDrawn += static_cast<uint64_t>(itMesh->second.indexCount) / 3u;
 }
 
 } // namespace demoscene

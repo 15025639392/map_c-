@@ -255,6 +255,14 @@ void TerrainScene::drawFrame() {
         const GLenum err = glGetError();
         ALOG("draw debug: glErr=0x%x (render via IRenderDevice)", err);
     }
+    if (frameCount_ % 300 == 1) { // 性能账本（H2 首笔账）：北极星"每字节/三角形有账"
+        const auto st = device_->stats();
+        ALOG("render ledger: draws=%llu triangles=%llu upBytes=%llu liveMeshes=%u",
+             static_cast<unsigned long long>(st.drawCalls),
+             static_cast<unsigned long long>(st.trianglesDrawn),
+             static_cast<unsigned long long>(st.uploadedBytes),
+             static_cast<unsigned int>(st.liveMeshes));
+    }
 }
 
 void TerrainScene::setCamera(double lonDeg, double latDeg, double altMeters,
