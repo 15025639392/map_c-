@@ -3,8 +3,10 @@
 #include <GLES3/gl3.h>
 
 #include <android/log.h>
+#include <sys/system_properties.h>
 #include <cmath>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <functional>
 #include <optional>
@@ -35,9 +37,10 @@ namespace {
 // 合成高度源（与 host 单测同一语义：fn 在每瓦像素格点求值）
 // ---------------------------------------------------------------------------
 double hillFn(const Cartographic& c) {
-    // 更强起伏（含多个山脊/山谷波长），让低空机位下坡面明暗可辨。
-    return 900.0 + 1200.0 * std::sin(c.longitude() * 55.0) * std::cos(c.latitude() * 42.0) +
-           400.0 * std::sin(c.longitude() * 220.0);
+    // 大起伏合成地形（数千米级，含两个波长），用于观感演示/机位调参。
+    return 1500.0 +
+           3200.0 * std::sin(c.longitude() * 55.0) * std::cos(c.latitude() * 42.0) +
+           900.0 * std::sin(c.longitude() * 220.0) * std::cos(c.latitude() * 130.0);
 }
 
 class FunctionalTerrainSource : public ITerrainDataSource {
@@ -147,9 +150,12 @@ const char* kVs =
     "layout(location=1) in vec3 aNor;\n"
     "uniform mat4 uMvp;\n"
     "uniform mat3 uViewRot;\n"
+    "layout(location=2) in float aHei;\n"
     "out vec3 vNor;\n"
+    "out float vHeight;\n"
     "void main() {\n"
     "  vNor = uViewRot * aNor;\n"
+    "  vHeight = aHei;\n"
     "  gl_Position = uMvp * vec4(aPos, 1.0);\n"
     "}\n";
 
@@ -160,10 +166,17 @@ const char* kFs =
     "out vec4 fragColor;\n"
     "uniform vec3 uLightDir;\n"
     "uniform vec3 uBaseColor;\n"
+    "in float vHeight;\n"
     "void main() {\n"
     "  vec3 n = normalize(vNor);\n"
-    "  float d = max(dot(n, normalize(uLightDir)), 0.0);\n"
-    "  vec3 c = uBaseColor * (0.35 + 0.65 * d);\n"
+    "  vec3 l = normalize(uLightDir);\n"
+    "  float d = max(dot(n, l), 0.0);\n"
+    "  float t = clamp((vHeight - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
+    "  vec3 low  = vec3(0.35, 0.48, 0.25);\n"
+    "  vec3 mid  = vec3(0.48, 0.43, 0.30);\n"
+    "  vec3 high = vec3(0.66, 0.52, 0.34);\n"
+    "  vec3 tint = t < 0.5 ? mix(low, mid, t * 2.0) : mix(mid, high, (t - 0.5) * 2.0);\n"
+    "  vec3 c = tint * (0.42 + 0.9 * d * d);\n"
     "  fragColor = vec4(c, 1.0);\n"
     "}\n";
 
@@ -177,6 +190,7 @@ void TerrainScene::destroyGlObjects() {
     if (vao_) glDeleteVertexArrays(1, &vao_);
     if (vboPos_) glDeleteBuffers(1, &vboPos_);
     if (vboNor_) glDeleteBuffers(1, &vboNor_);
+    if (vboHei_) glDeleteBuffers(1, &vboHei_);
     if (ebo_) glDeleteBuffers(1, &ebo_);
     program_ = vao_ = vboPos_ = vboNor_ = ebo_ = 0;
     geometryReady_ = false;
@@ -184,6 +198,14 @@ void TerrainScene::destroyGlObjects() {
 
 void TerrainScene::initializeGl() {
     destroyGlObjects();
+    char buf[PROP_VALUE_MAX] = {0};
+    if (__system_property_get("debug.mapc.station", buf) > 0 && buf[0] != '\0') {
+        station_ = std::atoi(buf);
+        if (station_ < 1 || station_ > 3) {
+            station_ = 2;
+        }
+    }
+    ALOG("station=%d", station_);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.42f, 0.55f, 0.74f, 1.0f); // 天蓝
@@ -191,6 +213,7 @@ void TerrainScene::initializeGl() {
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vboPos_);
     glGenBuffers(1, &vboNor_);
+    glGenBuffers(1, &vboHei_);
     glGenBuffers(1, &ebo_);
 }
 
@@ -240,19 +263,60 @@ void TerrainScene::drawFrame() {
         }
     }
     glUniformMatrix3fv(glGetUniformLocation(program_, "uViewRot"), 1, GL_FALSE, vr);
-    glUniform3f(glGetUniformLocation(program_, "uLightDir"), 0.35f, -0.25f, 0.9f);
+    glUniform3f(glGetUniformLocation(program_, "uLightDir"), 0.25f, 0.55f, 0.80f);
     glUniform3f(glGetUniformLocation(program_, "uBaseColor"), 0.55f, 0.45f, 0.30f);
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount_), GL_UNSIGNED_INT, nullptr);
+    if (frameCount_ == 1) {
+        const GLenum err = glGetError();
+        const int umvp = glGetUniformLocation(program_, "uMvp");
+        const int uview = glGetUniformLocation(program_, "uViewRot");
+        const int ulight = glGetUniformLocation(program_, "uLightDir");
+        const int ucolor = glGetUniformLocation(program_, "uBaseColor");
+        ALOG("draw debug: glErr=0x%x uniform locs mvp=%d view=%d light=%d color=%d", err,
+             umvp, uview, ulight, ucolor);
+    }
 }
 
 void TerrainScene::ensureGeometry() {
     const Ellipsoid& e = Ellipsoid::WGS84();
-    const Cartographic center = Cartographic::fromDegrees(106.44, 29.70, 0.0); // M-mid 同区
-    cameraPosCache_ = e.cartographicToCartesian(
-        Cartographic(center.longitude(), center.latitude(), 8000.0));
+    const Cartographic center = Cartographic::fromDegrees(106.44, 29.70, 0.0);
     cameraUpCache_ = e.geodeticSurfaceNormal(center);
-    cameraTargetCache_ = e.cartographicToCartesian(
-        Cartographic::fromDegrees(106.85, 29.55, 0.0));
+
+    TerrainLodConfig lod;
+    lod.viewportHeightPx = static_cast<double>(std::min(width_, height_));
+    lod.fovRadians = degreesToRadians(60.0);
+    lod.geometricErrorScale = 0.001;
+    lod.maxLevel = 16;
+
+    // 固定机位（近似 docs/northstar/terrain.md 验收机位；观感归用户拍板）。
+    double altMeters = 15000.0;
+    double dLonDeg = 0.08;
+    double dLatDeg = -0.05;
+    switch (station_) {
+        case 1: // M-near 3000m pitch −60
+            altMeters = 3000.0;
+            dLonDeg = 0.012;
+            dLatDeg = -0.009;
+            lod.maxScreenSpaceErrorPx = 0.8;
+            lod.maxLevel = 17;
+            break;
+        case 2: // M-mid 15000m pitch −45
+            altMeters = 15000.0;
+            dLonDeg = 0.08;
+            dLatDeg = -0.05;
+            lod.maxScreenSpaceErrorPx = 3.0;
+            break;
+        default: // M-graze 8000m pitch −10（近掠视）
+            altMeters = 8000.0;
+            dLonDeg = 0.6;
+            dLatDeg = -0.25;
+            lod.maxScreenSpaceErrorPx = 4.0;
+            break;
+    }
+    cameraPosCache_ = e.cartographicToCartesian(
+        Cartographic(center.longitude(), center.latitude(), altMeters));
+    cameraTargetCache_ = e.cartographicToCartesian(Cartographic::fromDegrees(
+        center.longitude() + dLonDeg, center.latitude() + dLatDeg, 0.0));
 
     const CameraView camera(cameraPosCache_, cameraTargetCache_, cameraUpCache_,
                             degreesToRadians(60.0), 1.0);
@@ -260,13 +324,6 @@ void TerrainScene::ensureGeometry() {
 
     const WebMercatorTileScheme scheme;
     const FunctionalTerrainSource source;
-
-    TerrainLodConfig lod;
-    lod.viewportHeightPx = static_cast<double>(std::min(width_, height_));
-    lod.fovRadians = degreesToRadians(60.0);
-    lod.maxScreenSpaceErrorPx = 2.0;
-    lod.geometricErrorScale = 0.001;
-    lod.maxLevel = 16;
 
     TerrainLodResult selection;
     if (const std::optional<Rectangle> foot = camera.groundFootprintRadians(e)) {
@@ -293,6 +350,7 @@ void TerrainScene::ensureGeometry() {
     // 汇总全部顶点（RTC 到相机），打包 pos/normal/index。
     std::vector<float> pos;
     std::vector<float> nor;
+    std::vector<float> hei;
     std::vector<uint32_t> idx;
     size_t base = 0;
     for (const auto& frame : frames) {
@@ -306,6 +364,8 @@ void TerrainScene::ensureGeometry() {
             nor.push_back(static_cast<float>(normals[i].x()));
             nor.push_back(static_cast<float>(normals[i].y()));
             nor.push_back(static_cast<float>(normals[i].z()));
+            const Cartographic c = e.cartesianToCartographic(positions[i]);
+            hei.push_back(static_cast<float>(c.height()));
         }
         for (uint32_t index : frame.mesh.indices) {
             idx.push_back(index + static_cast<uint32_t>(base));
@@ -330,6 +390,11 @@ void TerrainScene::ensureGeometry() {
                  nor.data(), GL_STATIC_DRAW);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glBindBuffer(GL_ARRAY_BUFFER, vboHei_);
+    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(hei.size() * sizeof(float)),
+                 hei.data(), GL_STATIC_DRAW);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, nullptr);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(idx.size() * sizeof(uint32_t)),
                  idx.data(), GL_STATIC_DRAW);

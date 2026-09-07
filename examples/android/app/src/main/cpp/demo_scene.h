@@ -19,11 +19,13 @@ private:
     unsigned int vao_ = 0;
     unsigned int vboPos_ = 0;
     unsigned int vboNor_ = 0;
+    unsigned int vboHei_ = 0;
     unsigned int ebo_ = 0;
     unsigned int indexCount_ = 0;
     bool geometryReady_ = false;
     int width_ = 1080;
     int height_ = 2400;
+    int station_ = 2; // debug.mapc.station: 1=M-near 2=M-mid 3=M-graze
     long frameCount_ = 0;
     long tilesDrawn_ = 0;
     int totalVertices_ = 0;
