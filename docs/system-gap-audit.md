@@ -30,11 +30,11 @@ demo 场景与简易手势输入。
 | 编号 | 系统 | 为什么缺（缺失面） | 北极星归属 | 与现有代码的接缝 |
 |---|---|---|---|---|
 | **S1** | **渲染/图形系统** | 无设备/后端抽象、无 RTC 渲染器、无 DrawList/材质系统、无**页存储/位移模板/高度纹理**、无帧缓冲/tonemap。demo 是"GLES 直写 + 单 mesh VBO"玩具渲染器 | 观感判据 T-V1~T-V14、T-P1/T-P13 全卡在此 | roadmap 阶段 2「渲染抽象（RenderDevice 接口层，先 host 空实现+用例）」待续；从 demo GL 代码抽象出来 |
-| **S2** | **资源-调度-流水线** | 无并发加载/解码 worker、优先级队列、去重、磁盘/内存缓存、按瓦预算、**帧收敛申报**、换代状态机、失效取消。后果：M-coarse 首帧 323 瓦 ≈40s | 七段流水线判据（T-E1~T-E5、T-E4 帧收敛纪律、T-P7/T-P8） | 已有 ITerrainDataSource / ITileBytesSource / TerrainFrameCache / AncestorFallbackDataSource / 装饰器组合——调度器调度这组接口即可 |
+| **S2** | **资源-调度-流水线** | 无并发加载/解码 worker、优先级队列、去重、磁盘/内存缓存、按瓦预算、**帧收敛申报**、换代状态机、失效取消。后果：M-coarse 首帧 323 瓦 ≈40s | 七段流水线判据（T-E1~T-E5、T-E4 帧收敛纪律、T-P7/T-P8） | 已有 ITerrainDataSource / ITileBytesSource / TerrainFrameCache / AncestorFallbackDataSource / 装饰器组合。**L1 已落**：TileCacheBytesSource（URL 字节缓存）→ 下一步并发/磁盘层 |
 | **S3** | **场景/图层系统** | 无图层栈（顺序/透明度/生命周期/样式开关/内容路由）；现在是"固定 demo 场景"，接不了第二图层 | 影像/矢量/标注都挂在图层栈上 | 在 demoscene 之上加 Scene/Layer 抽象，复用现有帧集合形态 |
-| **S4** | **影像系统** | 零行：无影像 provider（XYZ/WMTS/…）、无纹理上传预算、无**缺瓦退化链**（→祖先真实影像而非空洞） | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板；纹理上传等 S1 的 GPU 上传队列 |
+| **S4** | **影像系统** | 无影像 provider（XYZ/WMTS/…）、无纹理上传预算 | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板。**L1 已落**：ImageryTileAvailability（缺瓦→祖先退化决议状态机，host）→ 下一步 provider + 真实源 |
 | **S5** | **矢量与标注** | 零行：矢量瓦解码（MVT…）、样式/换肤、贴地不浮、字体图集标注、线宽/字号屏幕恒定 | ★ 矢量（阶段 5） | 拾取/查询走 TerrainPicking 扩展；高度贴地依赖现有查高服务 |
-| **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺惯性/阻尼、插值动画（flyTo）、穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有；demo Java CameraTouchController 是输入壳，需抽象成手势识别器层 |
+| **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有。**L1 已落**：CameraMotion（惯性收敛/flyTo 运动模型 host）→ 下一步导航控制器（穿地/手势层） |
 | **S7** | **光照/大气/颜色系统** | 无太阳/天光模型、无大气散射/雾（空气透视）、无 tonemap/颜色管理（北极星：亮部超范围优雅压回） | ★ 光照/颜色（阶段 9） | demo 现简单半球漫反射着色器是出发点 |
 | **S8** | **数据格式与内容注册** | 地形只吃 Terrain-RGB/Terrarium PNG；缺格式注册/内容类型（quantized-mesh/3D Tiles/glTF、JPEG/WebP、MVT/PMTiles）+ 每源元数据（availability 四叉树、geometricError、attribution） | B3 真实 geometricError；3D Tiles（阶段 8） | HeightmapCodec 族 + ITerrainDataSource 语义的注册点 |
 | **S9** | **时间/动画系统** | 无 Clock/缓动层；相机动画、换代 geomorph/fade、数据进场动画无驱动 | 换代过渡（T-V12）机制族 | 跨级吸附核（content/SeamAudit snap）已备，动画系统给换代"何时吸/吸多少/多快" |

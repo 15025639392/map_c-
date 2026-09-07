@@ -88,6 +88,8 @@ set(MAP_CAMERA_SOURCES
     camera/TerrainCameraPipeline.cpp
     camera/Frustum.h
     camera/Frustum.cpp
+    camera/CameraMotion.h
+    camera/CameraMotion.cpp
 )
 
 # providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。
@@ -101,6 +103,14 @@ set(MAP_PROVIDERS_SOURCES
     providers/StbPngDecoder.cpp
     providers/TerrainRgbPngTileSource.h
     providers/TerrainRgbPngTileSource.cpp
+    providers/TileCacheBytesSource.h
+    providers/TileCacheBytesSource.cpp
+)
+
+# imagery：影像可用性/退化链语义（S4 先行；影像瓦/合成在渲染系统后）。
+set(MAP_IMAGERY_SOURCES
+    imagery/ImageryTileAvailability.h
+    imagery/ImageryTileAvailability.cpp
 )
 
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
@@ -122,4 +132,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_CONTENT_SOURCES}
     ${MAP_CAMERA_SOURCES}
     ${MAP_PROVIDERS_SOURCES}
+    ${MAP_IMAGERY_SOURCES}
 )

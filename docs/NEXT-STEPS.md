@@ -5,11 +5,9 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 44/44 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
-  PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+
-  同级/跨级共享边审计（SeamAudit）+ 带环源 seam 闭合（B2 切片）+ 祖先回退
-  （调度-lite）+ 响应体魔数检查 + 高程基准改正接入路径 + 真实资产字节回归
-  + NASA 514 带环源（真实公网端点 z6–12）+ 五固定机位回归）。
+- Host：`./test_native.sh` → 47/47 绿。地形链路 44 套件（见 README 清单）+
+  L1 波次三件：TileCacheBytesSource（S2 字节缓存）、ImageryTileAvailability
+  （S4 影像退化链）、CameraMotion（S6 相机运动模型）——均为 host 先行单测。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
