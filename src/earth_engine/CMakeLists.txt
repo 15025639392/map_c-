@@ -119,6 +119,11 @@ set(MAP_IMAGERY_SOURCES
     imagery/ImageryTileAvailability.cpp
 )
 
+# renderer：渲染抽象（S1/L2 第一步）——设备接口层，host 先行，无图形头。
+set(MAP_RENDERER_SOURCES
+    renderer/IRenderDevice.h
+)
+
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
 if(MAP_CURL_LIBRARY)
     list(APPEND MAP_PROVIDERS_SOURCES
@@ -139,4 +144,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_CAMERA_SOURCES}
     ${MAP_PROVIDERS_SOURCES}
     ${MAP_IMAGERY_SOURCES}
+    ${MAP_RENDERER_SOURCES}
 )

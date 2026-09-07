@@ -29,7 +29,7 @@ demo 场景与简易手势输入。
 
 | 编号 | 系统 | 为什么缺（缺失面） | 北极星归属 | 与现有代码的接缝 |
 |---|---|---|---|---|
-| **S1** | **渲染/图形系统** | 无设备/后端抽象、无 RTC 渲染器、无 DrawList/材质系统、无**页存储/位移模板/高度纹理**、无帧缓冲/tonemap。demo 是"GLES 直写 + 单 mesh VBO"玩具渲染器 | 观感判据 T-V1~T-V14、T-P1/T-P13 全卡在此 | roadmap 阶段 2「渲染抽象（RenderDevice 接口层，先 host 空实现+用例）」待续；从 demo GL 代码抽象出来 |
+| **S1** | **渲染/图形系统** | 无 RTC 渲染器、无 DrawList/材质系统、无**页存储/位移模板/高度纹理**、无帧缓冲/tonemap | 观感判据 T-V1~T-V14、T-P1/T-P13 全卡在此 | **L2 第一步已落**：`renderer/IRenderDevice`（上传网格/绘制/视口最小面 + host 防御用例，render_device_interface）→ 下一步 GLES3 实现并换 demo |
 | **S2** | **资源-调度-流水线** | 无并发加载/解码 worker、优先级队列、去重、磁盘/内存缓存、按瓦预算、**帧收敛申报**、换代状态机、失效取消。后果：M-coarse 首帧 323 瓦 ≈40s | 七段流水线判据（T-E1~T-E5、T-E4 帧收敛纪律、T-P7/T-P8） | 已有 ITerrainDataSource / ITileBytesSource / TerrainFrameCache / AncestorFallbackDataSource / 装饰器组合。**L1 已落**：TileCacheBytesSource + DiskTileCacheBytesSource（内存+磁盘缓存）→ 下一步并发/预算层 |
 | **S3** | **场景/图层系统** | 无图层栈（顺序/透明度/生命周期/样式开关/内容路由）；现在是"固定 demo 场景"，接不了第二图层 | 影像/矢量/标注都挂在图层栈上 | 在 demoscene 之上加 Scene/Layer 抽象，复用现有帧集合形态 |
 | **S4** | **影像系统** | 无影像 provider（XYZ/WMTS/…）、无纹理上传预算 | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板。**L1 已落**：ImageryTileAvailability（缺瓦→祖先退化决议状态机，host）→ 下一步 provider + 真实源 |

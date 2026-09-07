@@ -5,9 +5,8 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 50/50 绿。地形链路 44 套件 + L1：TileCacheBytesSource /
-  DiskTileCacheBytesSource（S2）、ImageryTileAvailability（S4）、CameraMotion +
-  TerrainGroundGuard + CameraNavController（S6 运动/贴地/控制器）——均为 host 先行单测。
+- Host：`./test_native.sh` → 51/51 绿。地形链路 44 + L1（S2 缓存×2/S4 退化链/S6 运动×3）+
+  L2 渲染抽象接口层（renderer/IRenderDevice，S1 第一步）——均为 host 先行单测。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。

@@ -31,6 +31,11 @@
 |---|---|
 | resolveImageryTile / ImageryTileResolution（影像缺瓦→祖先退化决议，S4 语义先行） | imagery/ImageryTileAvailability.{h,cpp} |
 
+## renderer
+| 符号 | 文件 |
+|---|---|
+| IRenderDevice / MeshUploadData（渲染设备最小面，S1/L2 第一步） | renderer/IRenderDevice.h |
+
 ## tiling
 | 符号 | 文件 |
 |---|---|
@@ -90,6 +95,7 @@ terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
 `camera/`：camera_view、camera_motion、terrain_ground_guard、camera_nav_controller、frustum、
 terrain_camera_pipeline；
+`renderer/`：render_device_interface（IRenderDevice 语义/防御用例）；
 `providers/`：tile_url_formatter、tile_cache、disk_tile_cache、terrain_rgb_source、png_terrain_source、
 nasa_ring_source（NASA 514 带环源 + MAPC_LIVE_NET 真实端点）、http_bytes_source、
 terrarium_asset_decode（真实资产字节回归）。
