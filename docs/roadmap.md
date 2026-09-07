@@ -192,6 +192,16 @@
   尺寸不符拒绝。当前 28 套件全绿。
 - 下一步：curl HTTP 字节源（ITileBytesSource 的网路实现），或视锥精确剪枝/渲染抽象。
 
+### 固定机位 host 基线 + 判据机制证据节（2026-09-08）
+
+- `tests/unit/content/test_fixed_station_baseline.cpp`——M-mid 型固定机位 host 基线
+  （camH 15km 斜视，与 docs/northstar/terrain.md 验收机位同区）：断言可出帧/统计量级/
+  正下方覆盖/中心拾取海拔值域/无 NaN。本机采样：
+  `frames=2 z=[8..9] triangles=256 height=[250.6..346.1]`（已入 terrain.md）。
+- terrain.md 新增「本仓 host 机制证据」节：逐条登记机制级子主张 ↔ 对应判据（T-V5
+  同级/跨级共享网格点、T-P11 行序、T-P13 min/max 等）↔ 测试套件；判据表状态未动
+  （❌→✅ 仍需整链/观感自证，诚实口径）。当前 29 套件全绿。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：

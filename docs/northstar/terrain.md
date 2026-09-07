@@ -86,6 +86,31 @@
 
 ---
 
+## 本仓 host 机制证据（2026-09-08 起随轮次累积）
+
+> 判据表状态**未因此改动**（❌→✅ 需要整链/观感自证）；这里只登记**机制级子主张**的
+> host 测试背书，供将来整链验收时对照。每条附测试套件名。
+
+| host 机制证据 | 对应判据（机制部分） | 测试 |
+|---|---|---|
+| WGS84 双向转换/法线/法线垂足/极区（含地下负高） | T-V7 依赖的椭球回落地基 | test_ellipsoid / test_transforms |
+| 射线-椭球求交：入/出/切/失、真实微小错过不被绝对阈值吞 | 相机/拾取地基 | test_ray_ellipsoid |
+| Web Mercator 瓦片网格：XYZ 顶行原点、点→键、纬度越界判世界外 | T-P11 教训（行序=投影） | test_tile_scheme |
+| SSE 单调性与退化输入语义 | LOD 细化公式 | test_quadtree_geometric_error |
+| Terrain-RGB/Terrarium 编解码 ±0.1m 量化、行缓冲解码 | 高度图内容地基 | test_heightmap_codec |
+| HeightmapTile mercator 米查高、像素↔地理、min/max | T-P13 教训（包围体 min/max 侧） | test_heightmap_tile |
+| 同级相邻瓦共享边 ECEF 逐点重合 ±1e-6m（单瓦级与整帧装配级） | **T-V5 机制前提** | test_terrain_tile_mesh / test_terrain_frame_assembler |
+| 跨层级：粗瓦与子瓦共享网格点逐点重合；子瓦奇数行 T 顶点 | **T-V5 跨级半边（remap 域待整链）** | test_terrain_cross_level |
+| LOD 选择：相机到瓦区域最近点距离、SSE 停止、无父子同选 | 阶段 4 选择机制 | test_terrain_lod_selector |
+| 相机→脚印→选择→解码→网格→拾取 端到端；M-mid 型固定机位 host 基线 | 固定验收机位输入侧 | test_terrain_camera_pipeline / test_fixed_station_baseline |
+| PNG 瓦片字节→Terrain-RGB→网格 全链路（真实源字节形态） | 内容 Provider 语义 | test_png_terrain_source |
+
+**固定机位 host 基线（本机 2026-09-08，M-mid 型：camH 15km 斜视，8px/scale=1e-3，
+fn=500+300·sin·cos，重庆 106.44E 29.70N）**：
+`frames=2 z=[8..9] triangles=256 height=[250.6..346.1]`——改选择/网格/解码前先看它。
+
+---
+
 ## 更新协议（本仓沿用 gis-md 北极星纪律，简版）
 
 - 专项收官 → 改跟踪表状态，**附本仓证据**（commit / 单测 / 计数 / 截图）。
