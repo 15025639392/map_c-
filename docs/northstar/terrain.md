@@ -119,6 +119,7 @@
 | Terrain-RGB nodata 哨兵语义：RGB(0,0,0) 隐式注册 -10000、min/max 排除、采样哨兵角归一化（全哨兵上抛）、无哨兵表行为逐位不变 | **T-V6/T-V9/T-P13 机制侧**（-10000 假深沟/假悬崖法线根因的防御；B1 decode worker 首块，来源见 a4-merge-plan §7） | test_decode_nodata_semantics |
 | 同级共享边审计仪器：帧内所有同级邻接瓦共享边逐节点 ECEF 差统计（>1m 计数 / mean / max） | **T-V5 取证/回归门禁**（顶点栅格源 ≈0；无重叠环连续栅格源如实报差） | test_seam_audit |
 | **真实资产配准形态（2026-09-09 实测，缙云山 terrarium z10–13）**：相邻瓦**无重复边界列/无重叠环**，为全局连续 post 网格（每瓦 256 post、瓦界落在两瓦 post 之间）→ 顶点栅格式贴边网格在共享边取到瓦界两侧相邻 post，同级共享边 mesh 差 ≈ |坡度|×像元间距：**z13 均值 ~1.8m / z12 均值 3.9–4.7m（max ≤24m）**，超出 T-V5「<1m」目标 | T-V5 机制边界（现源形态下"同级无缝"不自动成立；关闭路径 = 带重叠环源 B2 或边 LUT/吸附 B4；判据观感仍待用户） | 见 a4-merge-plan §7 实测登记 + test_seam_audit |
+| **带重叠环源（borderInset=0.5，cell-registered + 1px 邻瓦回填）采样能力**（B2，gis-md 514 语义转写）：内缩半像元采样使共享边界读到两侧同一批世界样本 → 帧级同级共享边 ECEF ≈0（SeamAudit 门禁） | **T-V5 机制闭合路径**（assets 为无环源 → 接线项 = 解码侧回填环或换带环源；判据观感仍待用户） | test_ring_source_seam |
 
 **固定机位 host 基线（本机 2026-09-08，M-mid 型：camH 15km 斜视，8px/scale=1e-3，
 fn=500+300·sin·cos，重庆 106.44E 29.70N）**：

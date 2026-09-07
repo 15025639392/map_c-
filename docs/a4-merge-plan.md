@@ -113,3 +113,16 @@
   瓦界值，gis-md 514 模型的 256/257 变体）或 B4 边 LUT/吸附（渲染/网格侧统一取边）。
   **宿主仪器已立**：`content/SeamAudit` + `test_seam_audit`（顶点栅格 ≈0 自证；
   无环连续栅格如实报差 → 回归门禁）。判据观感（瓦界肉眼不可见）仍待用户拍板。
+
+### B2 能力切片入账（2026-09-09，borderInset 采样 + 环源 seam 闭合证明）
+
+- 已并（单实现，默认零扰动）：`TerrainGrid::borderInset`（默认 0=顶点栅格，行为逐位
+  不变）→ `HeightmapTile` 透传 → `TerrainTileMeshBuilder` 节点**落位与采样解耦**：
+  落位按瓦界网格分数；采样按配准内缩 px = inset + f·((w−1)−2·inset)。
+- 转写 gis-md 514 语义 → `tests/unit/content/test_ring_source_seam`：半像元内缩采样
+  在共享边界给位级一致值；带环源（每瓦 C cell + 1px 回填，缓冲 C+2）帧级 SeamAudit
+  ≈0（节点段数 8 与互质 5 均过）——即无环资产实测 1.8–4.7m 差距的**机制关闭路径**
+  已证（与 test_seam_audit 无环 fixture 的 ~10m 报差成对照）。
+- 接线余项（需数据/设备侧决策）：内置 assets 本身无环 → 要么解码侧读邻瓦边界
+  回填环（AAssetManager 4 邻瓦 1px strip），要么换带环真实源（如 AWS Mapzen
+  含环瓦片，须验证其 256 变体环宽）；模拟器出帧验证。判据观感仍待用户。

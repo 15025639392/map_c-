@@ -3,25 +3,26 @@
 > 给下一位会话/用户的一页指引。仓库/远端同步（36+ 提交，HEAD=origin/main）。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 36/36 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
+- Host：`./test_native.sh` → 37/37 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
   PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+
-  同级共享边审计（SeamAudit）+ 五固定机位回归）。
+  同级共享边审计（SeamAudit）+ 带环源 seam 闭合（B2 切片）+ 五固定机位回归）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
 
-## A4/B1 已开工（2026-09-08 续）
+## A4 已开工（B1/B2 切片，2026-09-08 续）
 - 源盘点（gis-md `bf25c639` 文件/单测/语义差值）与拆分设计 → `docs/a4-merge-plan.md` §7。
-- 首块已并入：Terrain-RGB nodata 哨兵语义（RGB(0,0,0) 隐式注册 -10000 → min/max 排除 +
+- B1 首块已并入：Terrain-RGB nodata 哨兵语义（RGB(0,0,0) 隐式注册 -10000 → min/max 排除 +
   采样哨兵角归一化），落在既有单实现（无哨兵时行为逐位不变）；转写 case =
-  `test_decode_nodata_semantics`（host 35/35、android-arm64 core 编译过）。
+  `test_decode_nodata_semantics`。
+- B2 切片已并入：`TerrainGrid::borderInset` + mesh 落位/采样解耦（默认 0 逐位不变）；
+  带环源（cell-registered + 1px 回填）同级边闭合证明 = `test_ring_source_seam`。
 - 余项（按 a4-merge-plan §7 差值表）：16bit 全局格点量化（GPU/页存储域）、
-  borderInset 0.5/514 重叠环采样（B2）、ImageTileBodyCheck（接真实网络源时）、
-  网络/线程/缓存策略接 ITileBytesSource 的调度化。
+  ImageTileBodyCheck（接真实网络源时）、网络/线程/缓存策略接 ITileBytesSource 的调度化。
 - **实测登记（2026-09-09）**：内置 assets 为无重叠环连续栅格 → 同级共享边 mesh 差
-  ≈|坡度|×像元（z13 均值 1.8m / z12 3.9–4.7m，max 24m），T-V5「<1m」需 B2 带环源或
-  B4 边 LUT 关闭；取证仪器 `SeamAudit` + test_seam_audit 已立（详见 a4-merge-plan §7
-  与 terrain.md 机制证据）。
+  ≈|坡度|×像元（z13 均值 1.8m / z12 3.9–4.7m，max 24m）；**B2 切片已证带环源
+  SeamAudit≈0**（test_ring_source_seam，转写 gis-md 514 语义）→ assets 接线项 =
+  解码侧回填环或换带环源（详见 a4-merge-plan §7 与 terrain.md 机制证据）。
 
 ## 看什么 / 怎么判（观感，像素归你）
 - 正片：`docs/assets/station1..5.png`（= M-near/M-mid/M-graze/M-high/M-coarse）；
