@@ -158,3 +158,13 @@
   **线性场（无地形曲率）→ 仅椭球曲率弦垂 ~0.1m**——平坦地形跨级换代同样有
   裂缝（粗边弦切进椭球曲面内侧），与同级的 Δ-gap（1.8–4.7m）同属 T-V5 账本，
   量级上同级 gap 优先。host 41/41。
+
+### B4 吸附数值原型入账（2026-09-09，snapChildBoundariesToCoarse）
+
+- `SeamAudit::snapChildBoundariesToCoarse`：把帧内跨级子瓦贴粗瓦那列/行边界顶点
+  **吸附到粗瓦边弦折线**（closest-point 投影）——只动边界顶点，拓扑/其余顶点
+  不变（水密）；吸附量 = auditCrossLevelTVertexGap 度量值。CPU 拼帧（调度/渲染域
+  落地前）数值内核 + GPU remap 吸附量对拍基准。
+- 测试（并入 test_cross_level_tvertex）：强曲率 fixture 吸附前 ~7m → 吸附后
+  **max < 1e-6 m**（顶点/三角形计数不变）；东/南双轴 4 边都闭合。host 43/43、
+  android-arm64 core 编译过。

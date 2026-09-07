@@ -49,4 +49,15 @@ SeamAuditResult auditSameLevelSharedEdges(
 SeamAuditResult auditCrossLevelTVertexGap(
     const std::vector<TerrainFrameAssembler::Frame>& frames);
 
+/// B4 吸附数值原型：把帧内跨级子瓦边界顶点**吸附到粗瓦边弦折线**（closest-point
+/// 投影），消灭 T-顶点裂缝（吸附量 = auditCrossLevelTVertexGap 的度量值）。
+///
+/// 机制说明（与真实引擎的 LOD stitching / GPU 边 LUT 同族）：
+/// - 只动子瓦贴粗瓦的那一列/行边界顶点；子瓦其余顶点与拓扑不动（水密性保持，
+///   边界邻接三角带被轻微拉平，量级 ≈ 原裂缝）；
+/// - 同级边不受影响（同一列/行内其余节点没动）。
+/// 用途：CPU 网格拼帧（调度/渲染域落地前的数值内核）与 GPU remap 吸附量的
+/// 对拍基准。返回被吸附（位置被改动）的边界节点数；frames 原地修改。
+int snapChildBoundariesToCoarse(std::vector<TerrainFrameAssembler::Frame>& frames);
+
 } // namespace earth_engine

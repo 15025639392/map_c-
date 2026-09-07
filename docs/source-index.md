@@ -45,7 +45,7 @@
 | HeightDatumCorrectingDataSource（undulation 逐样本叠加，EGM96 接入路径） | content/HeightDatumCorrectingDataSource.{h,cpp} |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
 | auditSameLevelSharedEdges / SeamAuditResult（同级共享边审计） | content/SeamAudit.{h,cpp} |
-| auditCrossLevelTVertexGap（跨级 T-顶点裂缝度量，B4 前身） | content/SeamAudit.{h,cpp} |
+| auditCrossLevelTVertexGap / snapChildBoundariesToCoarse（跨级 T-顶点度量 + 吸附原型） | content/SeamAudit.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |
 | pickTerrainFrame / TerrainPickHit | content/TerrainPicking.{h,cpp} |
 

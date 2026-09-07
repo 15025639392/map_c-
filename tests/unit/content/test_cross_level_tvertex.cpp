@@ -81,6 +81,18 @@ Scenario makeEastScenario(const WebMercatorTileScheme& scheme, int coarseNodes,
     return sc;
 }
 
+// 东/南双轴场景：粗瓦 z12 + 东邻两子瓦 + 南邻两子瓦（粗瓦东边与南边都出现 T-顶点）。
+Scenario makeCornerScenario(const WebMercatorTileScheme& scheme, int coarseNodes,
+                            int childNodes, double (*fn)(const Cartographic&, double)) {
+    Scenario sc = makeEastScenario(scheme, coarseNodes, childNodes, fn);
+    // 南邻 (z12, x, y+1) 的两个 z13 子瓦（共享粗瓦南边；2(y+1)=3388）。
+    sc.frames.push_back(buildFrame(scheme, TileKey(13, 6518, 3388), childNodes, fn,
+                                   sc.latCenterRad));
+    sc.frames.push_back(buildFrame(scheme, TileKey(13, 6519, 3388), childNodes, fn,
+                                   sc.latCenterRad));
+    return sc;
+}
+
 } // namespace
 
 // 端点共享点应精确重合（同 fn 同几何）：裂缝集中在段内 T-顶点。
@@ -122,4 +134,49 @@ TEST(CrossLevelTVertex, TerrainCurvatureDominatesOverEarthCurvature) {
     const SeamAuditResult gapQuad = auditCrossLevelTVertexGap(quad.frames);
     const SeamAuditResult gapLin = auditCrossLevelTVertexGap(lin.frames);
     EXPECT_GT(gapQuad.maxMeters, gapLin.maxMeters); // 强曲率 >> 椭球项
+}
+
+// ---- B4 吸附数值原型：snapChildBoundariesToCoarse ---------------------------
+
+TEST(CrossLevelTVertex, SnapClosesEastEdgeGapAndKeepsTopology) {
+    const WebMercatorTileScheme scheme;
+    Scenario sc = makeEastScenario(scheme, 2, 2, &quadLatFn);
+    const SeamAuditResult before = auditCrossLevelTVertexGap(sc.frames);
+    ASSERT_GT(before.maxMeters, 5.0);
+
+    // 拓扑计数（吸附不改索引/三角形，只改边界顶点位置）。
+    size_t verts = 0, tris = 0;
+    for (const auto& f : sc.frames) {
+        verts += f.mesh.positionsEcef.size();
+        tris += f.mesh.indices.size() / 3;
+    }
+
+    const int snapped = snapChildBoundariesToCoarse(sc.frames);
+    EXPECT_GT(snapped, 0); // 段内 T-顶点被吸附（corner 本就精确，不算入）
+
+    const SeamAuditResult after = auditCrossLevelTVertexGap(sc.frames);
+    EXPECT_EQ(after.comparedNodePairs, before.comparedNodePairs);
+    EXPECT_LT(after.maxMeters, 1e-6); // 子瓦西列已贴粗瓦东边弦 → 裂缝归零
+
+    size_t vertsAfter = 0, trisAfter = 0;
+    for (const auto& f : sc.frames) {
+        vertsAfter += f.mesh.positionsEcef.size();
+        trisAfter += f.mesh.indices.size() / 3;
+    }
+    EXPECT_EQ(vertsAfter, verts); // 水密性：拓扑不变
+    EXPECT_EQ(trisAfter, tris);
+}
+
+TEST(CrossLevelTVertex, SnapCoversBothAxesEastAndSouth) {
+    const WebMercatorTileScheme scheme;
+    Scenario sc = makeCornerScenario(scheme, 2, 2, &quadLatFn);
+    const SeamAuditResult before = auditCrossLevelTVertexGap(sc.frames);
+    EXPECT_EQ(before.edgePairsFound, 4); // 东 2 + 南 2
+    ASSERT_GT(before.maxMeters, 5.0);
+
+    const int snapped = snapChildBoundariesToCoarse(sc.frames);
+    EXPECT_GT(snapped, 0);
+    const SeamAuditResult after = auditCrossLevelTVertexGap(sc.frames);
+    EXPECT_EQ(after.edgePairsFound, 4);
+    EXPECT_LT(after.maxMeters, 1e-6); // 东/南双轴都闭合
 }

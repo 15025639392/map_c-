@@ -64,6 +64,41 @@ double pointSegmentDistance(const Vec3& p, const Vec3& a, const Vec3& b) {
     return (p - (a + ab * t)).magnitude();
 }
 
+// 点到折线最近点（投影到最近线段；返回线上点）。
+Vec3 closestPointOnPolyline(const Vec3& p, const std::vector<Vec3>& polyline) {
+    Vec3 best = polyline.front();
+    double bestDist = std::numeric_limits<double>::max();
+    for (size_t s = 0; s + 1 < polyline.size(); ++s) {
+        const Vec3& a = polyline[s];
+        const Vec3& b = polyline[s + 1];
+        const Vec3 ab = b - a;
+        const double lenSq = ab.magnitudeSquared();
+        const double t =
+            lenSq <= 0.0 ? 0.0 : std::clamp((p - a).dot(ab) / lenSq, 0.0, 1.0);
+        const Vec3 candidate = a + ab * t;
+        const double d = (p - candidate).magnitudeSquared();
+        if (d < bestDist) {
+            bestDist = d;
+            best = candidate;
+        }
+    }
+    return best;
+}
+
+// 粗瓦外沿弦折线（axis 0 = 东列自上而下；1 = 南行自西向东）。
+std::vector<Vec3> coarseEdgePolyline(const TerrainMeshData& coarse, int coarseEdgeAxis) {
+    const int stride = coarse.nodesPerEdge + 1;
+    std::vector<Vec3> polyline;
+    polyline.reserve(static_cast<size_t>(stride));
+    for (int i = 0; i < stride; ++i) {
+        polyline.push_back(coarseEdgeAxis == 0
+                               ? coarse.positionsEcef[static_cast<size_t>(i * stride + stride - 1)]
+                               : coarse.positionsEcef[static_cast<size_t>((stride - 1) * stride +
+                                                                          i)]);
+    }
+    return polyline;
+}
+
 // 子瓦边界节点到粗瓦边弦折线的最小距离（粗瓦外沿顶点序列）。
 void accumulateChildToCoarse(const TerrainMeshData& child, int childEdgeAxis,
                              const TerrainMeshData& coarse, int coarseEdgeAxis,
@@ -77,17 +112,7 @@ void accumulateChildToCoarse(const TerrainMeshData& child, int childEdgeAxis,
         coarse.positionsEcef.size() < static_cast<size_t>(strideCoarse * strideCoarse)) {
         return;
     }
-    // 粗瓦边弦折线顶点序列（axis 0 = 东列自上而下；1 = 南行自西向东）。
-    std::vector<Vec3> polyline;
-    polyline.reserve(static_cast<size_t>(strideCoarse));
-    for (int i = 0; i < strideCoarse; ++i) {
-        polyline.push_back(coarseEdgeAxis == 0
-                               ? coarse.positionsEcef[static_cast<size_t>(i * strideCoarse +
-                                                                          strideCoarse - 1)]
-                               : coarse.positionsEcef[static_cast<size_t>((strideCoarse - 1) *
-                                                                              strideCoarse +
-                                                                          i)]);
-    }
+    const std::vector<Vec3> polyline = coarseEdgePolyline(coarse, coarseEdgeAxis);
     result.comparedEdges += 1;
     for (int j = 0; j < strideChild; ++j) {
         const Vec3& w =
@@ -173,6 +198,69 @@ SeamAuditResult auditCrossLevelTVertexGap(
         result.meanMeters /= static_cast<double>(result.comparedNodePairs);
     }
     return result;
+}
+
+int snapChildBoundariesToCoarse(std::vector<TerrainFrameAssembler::Frame>& frames) {
+    if (frames.empty()) {
+        return 0;
+    }
+    std::unordered_map<TileKey, size_t> index;
+    for (size_t i = 0; i < frames.size(); ++i) {
+        index.emplace(frames[i].key, i);
+    }
+    int snapped = 0;
+    for (auto& frame : frames) {
+        const TileKey key = frame.key;
+        if (frame.mesh.nodesPerEdge < 2) {
+            continue;
+        }
+        // 东邻两子瓦：吸附子瓦西列到本粗瓦东边弦。
+        for (const TileKey& child : eastChildren(key)) {
+            const auto it = index.find(child);
+            if (it == index.end()) {
+                continue;
+            }
+            TerrainMeshData& cm = frames[it->second].mesh;
+            if (cm.nodesPerEdge < 2 ||
+                cm.positionsEcef.size() < static_cast<size_t>(cm.nodesPerEdge + 1)) {
+                continue;
+            }
+            const std::vector<Vec3> polyline = coarseEdgePolyline(frame.mesh, 0);
+            const int cStride = cm.nodesPerEdge + 1;
+            for (int j = 0; j < cStride; ++j) {
+                Vec3& w = cm.positionsEcef[static_cast<size_t>(j * cStride + 0)]; // 子瓦西列
+                const Vec3 proj = closestPointOnPolyline(w, polyline);
+                if ((w - proj).magnitudeSquared() > 0.0) {
+                    w = proj;
+                    ++snapped;
+                }
+            }
+        }
+        // 南邻两子瓦：吸附子瓦北行到本粗瓦南边弦。
+        for (const TileKey& child : southChildren(key)) {
+            const auto it = index.find(child);
+            if (it == index.end()) {
+                continue;
+            }
+            TerrainMeshData& cm = frames[it->second].mesh;
+            if (cm.nodesPerEdge < 2 ||
+                cm.positionsEcef.size() < static_cast<size_t>((cm.nodesPerEdge + 1) *
+                                                              (cm.nodesPerEdge + 1))) {
+                continue;
+            }
+            const std::vector<Vec3> polyline = coarseEdgePolyline(frame.mesh, 1);
+            const int cStride = cm.nodesPerEdge + 1;
+            for (int j = 0; j < cStride; ++j) {
+                Vec3& w = cm.positionsEcef[static_cast<size_t>(0 * cStride + j)]; // 子瓦北行
+                const Vec3 proj = closestPointOnPolyline(w, polyline);
+                if ((w - proj).magnitudeSquared() > 0.0) {
+                    w = proj;
+                    ++snapped;
+                }
+            }
+        }
+    }
+    return snapped;
 }
 
 } // namespace earth_engine
