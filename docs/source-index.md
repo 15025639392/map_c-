@@ -36,11 +36,11 @@
 ## content
 | 符号 | 文件 |
 |---|---|
-| HeightmapCodec（Terrain-RGB / Terrarium 编解码） | content/HeightmapCodec.{h,cpp} |
-| HeightmapSampler（nearest / bilinear CLAMP） | content/HeightmapSampler.{h,cpp} |
-| HeightmapTile（mercator 米查高，像素↔地理，min/max） | content/HeightmapTile.{h,cpp} |
+| HeightmapCodec（Terrain-RGB / Terrarium 编解码；kTerrainRgbNoDataFloorMeters 哨兵常量） | content/HeightmapCodec.{h,cpp} |
+| HeightmapSampler（nearest / bilinear CLAMP；可选 no-data 哨兵 → 哨兵角归一化） | content/HeightmapSampler.{h,cpp} |
+| HeightmapTile（mercator 米查高，像素↔地理；min/max 排除哨兵） | content/HeightmapTile.{h,cpp} |
 | TerrainMeshData / TerrainTileMeshBuilder | content/TerrainTileMesh.{h,cpp} |
-| ITerrainDataSource / TerrainGrid | content/TerrainDataSource.h |
+| ITerrainDataSource / TerrainGrid（heights + noDataValues） | content/TerrainDataSource.h |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |
 | pickTerrainFrame / TerrainPickHit | content/TerrainPicking.{h,cpp} |
@@ -68,5 +68,6 @@
 `tiling/`：tile_key、tile_scheme、terrain_lod_selector；
 `content/`：heightmap_codec、heightmap_sampler、heightmap_tile、terrain_tile_mesh、
 terrain_frame_assembler、terrain_cross_level、terrain_picking、terrain_frame_cache、
-fixed_station_baseline；`camera/`：camera_view、frustum、terrain_camera_pipeline；
+decode_nodata_semantics（gis-md 哨兵语义对拍）、fixed_station_baseline；
+`camera/`：camera_view、frustum、terrain_camera_pipeline；
 `providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source。

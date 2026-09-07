@@ -1,13 +1,22 @@
-# NEXT-STEPS —— 从哪里继续（2026-09-08 快照）
+# NEXT-STEPS —— 从哪里继续（2026-09-09 快照）
 
 > 给下一位会话/用户的一页指引。仓库/远端同步（36+ 提交，HEAD=origin/main）。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 34/34 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
-  PNG/HTTP/网格/查高/缓存/拾取/视锥 + 五固定机位回归）。
+- Host：`./test_native.sh` → 35/35 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
+  PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+ 五固定机位回归）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
+
+## A4/B1 已开工（2026-09-08 续）
+- 源盘点（gis-md `bf25c639` 文件/单测/语义差值）与拆分设计 → `docs/a4-merge-plan.md` §7。
+- 首块已并入：Terrain-RGB nodata 哨兵语义（RGB(0,0,0) 隐式注册 -10000 → min/max 排除 +
+  采样哨兵角归一化），落在既有单实现（无哨兵时行为逐位不变）；转写 case =
+  `test_decode_nodata_semantics`（host 35/35、android-arm64 core 编译过）。
+- 余项（按 a4-merge-plan §7 差值表）：16bit 全局格点量化（GPU/页存储域）、
+  borderInset 0.5/514 重叠环采样（B2）、ImageTileBodyCheck（接真实网络源时）、
+  网络/线程/缓存策略接 ITileBytesSource 的调度化。
 
 ## 看什么 / 怎么判（观感，像素归你）
 - 正片：`docs/assets/station1..5.png`（= M-near/M-mid/M-graze/M-high/M-coarse）；
@@ -15,15 +24,14 @@
 - 判据口径：观感判据 T-V* 目前 ❌ 待拍板；机制证据已立（terrain.md「host 机制证据」）。
 
 ## 可选下一步（优先级建议）
-1. **观感调优**（30–60 min/项）：构图/法线/光照/网格密度 → 改 `demo_scene.cpp` 重建重截图。
-2. **A4 选择性并入 gis-md 现成地形服务**（按 `docs/a4-merge-plan.md` B1→B5）：
-   先把 `HeightmapTerrainContentProvider` 的 decode worker 拆出适配 `ITerrainDataSource`
-   （assets/HTTP 字节统一走 `ITileBytesSource`）；每步 host 单测 + 基线 + 模拟器出帧。
-   形态确认点：选择性适配（默认） vs 整体 vendor。
+1. **A4 并入续（B1 余项 → B2）**：按 `docs/a4-merge-plan.md` §7 差值表推进——量化语义
+   （资源轴记账）→ borderInset/514 重叠环采样（cell-registered 源语义 + 无缝逐位对拍，
+   接 B4 边吸附地基）；每步 host 单测 + 基线。
+2. **观感调优**（30–60 min/项）：构图/法线/光照/网格密度 → 改 `demo_scene.cpp` 重建重截图。
 3. **EGM96 undulation**：`core/geodesy/HeightDatumCorrector` 已备（网格双线性+单测）；
    下载 EGM96 网格接入 `HeightmapTile` 上游即启用（当前默认恒等、口径已记录）。
 4. **真实网络源**：`CurlBytesSource` host 已通（回环实测）；设备侧接公网 terrarium 需
-   处理模拟器网络/配额，assets 方式已是离线等价。
+   处理模拟器网络/配额（顺带把 ImageTileBodyCheck 响应体硬化带上），assets 方式已是离线等价。
 
 ## 决策点清单（一句话即可触发）
 - 「station N 的 X 要改」→ 我调 A3.2；

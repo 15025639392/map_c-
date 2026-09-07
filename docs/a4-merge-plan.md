@@ -52,3 +52,46 @@
 
 按 stage6-merge-checkpoint 第 1-2 步：在 gis-md 列 B1 相关文件与单测清单 + commit，
 写入本预案附表后开做 B1 的 worker 拆分适配。
+
+---
+
+## 7. 执行记录（B1 已开工，2026-09-08 续）
+
+> 会话按 NEXT-STEPS 决策点「A4 B1 开工」默认选择性形态执行；第一步 = 本预案 §6 的
+> 源盘点 + host 先行数值件。附表见下。
+
+### B1 源盘点（gis-md commit `bf25c639`，2026-09-07，HEAD）
+
+| gis-md 文件（行锚点） | 角色 | 并入动作 |
+|---|---|---|
+| `providers/HeightmapTerrainProvider.{h,cpp}`（decodeTile 318–404；隐式哨兵注册 330–336/372–375；`kTerrainRgbNoDataFloorMeters` 65） | **decode worker 主体**：字节 → PNG/RGB → 高度 | 数值语义并入（本轮：哨兵注册 + min/max 排除 + 采样归一化）；请求/线程/缓存壳（81–277）留在本仓 `ITileBytesSource` + 调用方 |
+| `providers/TerrainProvider.{h,cpp}`（`DecodedHeightmap` 27–124；`assignHeights` 29–67；采样 70–142） | 解码产物语义：16bit 全局格点量化（code0=nodata）、min/max 单一产地、borderInset/哨兵角归一化采样 | 本轮并入**哨兵语义**部分；量化/borderInset 未并入（见差值表） |
+| `content/HeightmapTerrainContentProvider.{h,cpp}` | worker 的渲染端组装（decode → glTF 网格 + 裙墙/geomorph） | **不并入**（渲染形态与本仓自写几何不同构） |
+| `providers/ImageTileBodyCheck.h` | 响应体魔数白名单（200+CDN XML 硬化） | 未并入（网络硬化项，接真实网络源时做） |
+
+**gis-md 单测 → 本仓转写/对照**：
+
+| gis-md 测试（行锚点） | 本仓落点 |
+|---|---|
+| `content/test_heightmap_terrain.cpp`：decode 契约 135–171；隐式哨兵契约组 585–625 | `tests/unit/content/test_decode_nodata_semantics.cpp`（新，35/35 含） |
+| `tiling/test_decoded_heightmap_sampler.cpp`：哨兵环排除/全哨兵传播 390–417；boderInset 0.5 无缝逐位等 326–357 | 哨兵环/传播 case → 同上（顶点栅格形态）；borderInset/514 源 case 留 B2 |
+| 同上 142–280（渲染网格一致采样/迟滞档位） | GPU 位移域，不转写 |
+
+### 语义差值（本仓 host 链 vs gis-md decode worker）
+
+| 语义 | gis-md | 本仓此前 | 本轮 |
+|---|---|---|---|
+| Terrain-RGB RGB(0,0,0) nodata 底值 | 隐式注册 -10000 哨兵（单一来源常量） | 无（-10000 当合法高度） | ✅ 注册 + min/max 排除 + 采样哨兵角归一化 |
+| 瓦 min/max | 排除 no-data（唯一产地） | 全量扫描 | ✅ 有哨兵表时排除；无表逐位不变 |
+| 采样遇哨兵角 | 仅有效角加权再归一化；全哨兵 → 哨兵上抛 | CLAMP 纯双线性 | ✅ 同上（哨兵表存在时） |
+| 16bit 全局格点量化（CPU 常驻账） | code = round(h/0.125)，瓦间同高同码 → 无缝逐位等 | double 直通 | ⬜ 资源轴，GPU/页存储域再接（T-E1 记账时） |
+| borderInset 0.5 / 514 重叠环 | 半像素内缩 + 邻瓦重叠回填 → 同级边逐位等 | 顶点栅格（inset 0） | ⬜ B2（cell-registered 源语义） |
+| 响应体魔数检查 | 白名单 + 12B 下限 | 无 | ⬜ 网络硬化项 |
+
+**落地纪律**：哨兵语义落在既有单实现上（`HeightmapCodec::kTerrainRgbNoDataFloorMeters`
+常量、`TerrainGrid::noDataValues`、`HeightmapSampler`/`HeightmapTile` 可选哨兵参数、
+两个 Terrain-RGB 源注册点、`TerrainFrameAssembler` 透传）——**不新建并行类型**
+（T-P6 双实现禁令）；未注册哨兵时行为逐位不变（host 34 套件旧断言零改动）。
+验收：`./test_native.sh` 35/35（新增 test_decode_nodata_semantics）+ 固定机位基线不回退。
+
+**下一步（B1 余项 / B2 起点）**：见 terrain.md「host 机制证据」更新与 NEXT-STEPS。

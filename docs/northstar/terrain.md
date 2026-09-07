@@ -116,6 +116,7 @@
 | LOD 选择：相机到瓦区域最近点距离、SSE 停止、无父子同选 | 阶段 4 选择机制 | test_terrain_lod_selector |
 | 相机→脚印→选择→解码→网格→拾取 端到端；M-mid 型固定机位 host 基线 | 固定验收机位输入侧 | test_terrain_camera_pipeline / test_fixed_station_baseline |
 | PNG 瓦片字节→Terrain-RGB→网格 全链路（真实源字节形态） | 内容 Provider 语义 | test_png_terrain_source |
+| Terrain-RGB nodata 哨兵语义：RGB(0,0,0) 隐式注册 -10000、min/max 排除、采样哨兵角归一化（全哨兵上抛）、无哨兵表行为逐位不变 | **T-V6/T-V9/T-P13 机制侧**（-10000 假深沟/假悬崖法线根因的防御；B1 decode worker 首块，来源见 a4-merge-plan §7） | test_decode_nodata_semantics |
 
 **固定机位 host 基线（本机 2026-09-08，M-mid 型：camH 15km 斜视，8px/scale=1e-3，
 fn=500+300·sin·cos，重庆 106.44E 29.70N）**：
@@ -126,7 +127,8 @@ fn=500+300·sin·cos，重庆 106.44E 29.70N）**：
 **模拟器观感证据指针（2026-09-08）**：真 DEM（terrarium，WGS84 ECEF）已上
 Android 模拟器——五固定机位截图 `docs/assets/station1..5.png`、ASCII 证据包
 `docs/assets/evidence.md`。判据 T-V1/T-V6/T-V12（观感）仍为 ❌，**待用户像素拍板**
-（截图已备）；并入 gis-md 服务预案见 `docs/a4-merge-plan.md`。
+（截图已备）；并入 gis-md 服务预案见 `docs/a4-merge-plan.md`（**A4/B1 已开工**，
+盘点 + nodata 哨兵语义首块入账见该文 §7）。
 
 ## 更新协议（本仓沿用 gis-md 北极星纪律，简版）
 

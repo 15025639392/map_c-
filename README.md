@@ -46,9 +46,11 @@ map_cplus/
 
 ## 当前状态（2026-09-08）
 
-**34 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
+**35 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
-拾取，外加帧缓存增量与固定机位基线。判据/能力映射见
+拾取，外加帧缓存增量与固定机位基线。**A4 并入已开工（B1 首块）**：Terrain-RGB
+nodata 哨兵语义（隐式注册 -10000 / min-max 排除 / 采样哨兵角归一化）已落入既有
+解码链（单实现，见 [a4-merge-plan.md](docs/a4-merge-plan.md) §7）。判据/能力映射见
 `docs/northstar/engine-targets.md` §5；地形判据状态逐条见 `docs/northstar/terrain.md`
 （全部 ❌——观感类需 GPU 平台/真机，机制类证据已登记）。
 

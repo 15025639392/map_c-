@@ -49,7 +49,7 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 ## 4. 当前状态（2026-09-08）
 
 - 仓库骨架、构建（host native, cmake+ninja+googletest + gis-md vcpkg stb 头 + 系统 libcurl）、
-  31 个 gtest 套件全绿（含固定机位基线 + HTTP 回环 + 帧缓存增量）。
+  35 个 gtest 套件全绿（含固定机位基线 + HTTP 回环 + 帧缓存增量 + nodata 哨兵语义）。
 - 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/RayTriangle/Rectangle；Ellipsoid（WGS84 双向转换、
   法线、地表投影）；Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；
   Geographic/WebMercator 投影；瓦片键/四叉树 + WebMercatorTileScheme + SSE；
@@ -57,7 +57,9 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
   TerrainDataSource/TerrainFrameAssembler（host 地形帧主链路）+ TerrainFrameCache（增量）；
   CameraView + TerrainPicking + TerrainCameraPipeline + 跨层级共享网格点一致测试 +
   固定机位基线；providers：URL 模板 + 字节源 + CurlBytesSource（HTTP）+ PNG 全链路；
-  terrain.md「host 机制证据」节已立。
+  terrain.md「host 机制证据」节已立。**A4/B1 已开工**：Terrain-RGB nodata 哨兵语义
+  （隐式注册/min-max 排除/采样归一化）并入既有解码链单实现；源盘点见
+  [a4-merge-plan.md](a4-merge-plan.md) §7。
 - 未开始：渲染抽象（GPU/平台）；地形判据仍全部 ❌（见 terrain.md 跟踪表）。
 
 ## 6. 高程基准口径（2026-09-08 记）
@@ -82,7 +84,7 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 | 验收项 | 证据 | 状态 |
 |---|---|---|
-| host native 编译 + 地形相关 gtest 全绿 | `./test_native.sh` 34/34 全绿零告警（干净重建复核过）；含地形链路套件（codec/sampler/tile/mesh/frame/selector/pipeline/五机位回归等） | ✅ |
+| host native 编译 + 地形相关 gtest 全绿 | `./test_native.sh` 35/35 全绿零告警（复核过）；含地形链路套件（codec/sampler/tile/mesh/frame/selector/pipeline/decode_nodata_semantics/五机位回归等） | ✅ |
 | Android 模拟器可渲染地形帧并出截图 | `com.mapcplus.terrain` 于 Pixel_7_API_35（GLES3）运行：五固定机位（station1..5 预设）真 terrarium DEM WGS84 ECEF 出帧；`geometry ready` 日志 + 截图 docs/assets/station1..5.png、evidence.md ASCII 包 | ✅ |
 
 观感判据初判（T-V1/T-V6/T-V12…）与 A4 并入（选择性适配 gis-md 服务）为下一步开放项，
@@ -101,7 +103,8 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 | 渲染抽象 | 2/6 | T-V1~T-V14 观感 | **GPU/平台决策（真机验收）** |
 | 并入 gis-md 现成地形服务 | 6 | 全表回填 | 到"地形阶段"后执行合并点 |
 
-**宿主结论**：机制侧（坐标→网格→缓存）已闭环且 34 套件全绿；观感侧原依赖 GPU 平台
+**宿主结论**：机制侧（坐标→网格→缓存）已闭环且 35 套件全绿；观感侧原依赖 GPU 平台
 与真机——**2026-09-08 用户拍板：观感验证平台 = Android 模拟器（Pixel_7_API_35, GLES 3.0）**。
 里程碑 A0（core 交叉编译 android-arm64）✅：NDK 28.2 preset 构建出 libearth_engine_core.a。
 A1–A4 见 roadmap「Android 模拟器观感路线」；判据状态仍 ❌ 直到模拟器截图 + 用户拍板。
+A4 并入已开工（B1：源盘点 + Terrain-RGB nodata 哨兵语义首块，见 a4-merge-plan.md §7）。
