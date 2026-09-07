@@ -203,17 +203,23 @@ void TerrainScene::destroyGlObjects() {
         if (textureHandle_ != 0) {
             device_->releaseTexture(textureHandle_);
         }
-        for (uint32_t th : tileTextures_) {
-            if (th != 0u) {
-                device_->releaseTexture(th);
-            }
+        // S2 二刀：句柄所有权在持久 map（影像/注记/高度纹理）；向量只是本帧引用。
+        for (const auto& kv : imgTexByTile_) {
+            device_->releaseTexture(kv.second);
         }
-        for (uint32_t th : labelTextures_) {
-            if (th != 0u) {
-                device_->releaseTexture(th);
-            }
+        for (const auto& kv : lblTexByTile_) {
+            device_->releaseTexture(kv.second);
+        }
+        for (const auto& kv : hgtTexByTile_) {
+            device_->releaseTexture(kv.second);
         }
     }
+    imgTexByTile_.clear();
+    lblTexByTile_.clear();
+    hgtTexByTile_.clear();
+    imgTexOrder_.clear();
+    lblTexOrder_.clear();
+    hgtTexOrder_.clear();
     programHandle_ = 0;
     textureHandle_ = 0;
     tileTextures_.clear();
@@ -718,6 +724,31 @@ void TerrainScene::navStep() {
     }
 }
 
+uint32_t TerrainScene::textureForKey(std::map<TileKey, uint32_t>& map,
+                                     std::vector<TileKey>& order, const TileKey& key,
+                                     const std::function<uint32_t()>& create, size_t cap) {
+    const auto it = map.find(key);
+    if (it != map.end()) {
+        return it->second; // 命中：重建免解码/免新建
+    }
+    const uint32_t h = create();
+    if (h == 0u) {
+        return 0u;
+    }
+    map.emplace(key, h);
+    order.push_back(key);
+    if (order.size() > cap) { // FIFO 上限：释放最旧的句柄
+        const TileKey oldest = order.front();
+        order.erase(order.begin());
+        const auto oit = map.find(oldest);
+        if (oit != map.end()) {
+            device_->releaseTexture(oit->second);
+            map.erase(oit);
+        }
+    }
+    return h;
+}
+
 void TerrainScene::ensureGeometry() {
     const Ellipsoid& e = Ellipsoid::WGS84();
     const Cartographic center = Cartographic::fromDegrees(camLonDeg_, camLatDeg_, 0.0);
@@ -860,42 +891,75 @@ void TerrainScene::ensureGeometry() {
             const int demNodes = (level >= 12) ? 65 : 33;
             frames = buildDemFrames(scheme, ringSource, bandRect, e, level, demNodes,
                                     /*requestCells=*/512);
-            // 每瓦真实影像纹理（字节走同一缓存 → 单次下载；S4→渲染全链）。
+            // 每瓦真实影像纹理：S2 二刀——TileKey→GL 句柄持久映射（命中免解码/免新建，
+            // 新瓦才 fetchTexture+create；FIFO 上限淘汰并释放句柄；修复原每重建泄漏）。
+            constexpr size_t kTexCap = 256;
             tileTextures_.clear();
             tileTextures_.reserve(frames.size());
             labelTextures_.clear();
             labelTextures_.reserve(frames.size());
+            size_t imgHit = 0, imgNew = 0, lblHit = 0, lblNew = 0;
             for (const auto& f : frames) {
-                const auto tr = imagery.fetchTexture(f.key);
-                const uint32_t th =
-                    tr.has_value() ? device_->createTexture2D(tr->texture) : 0u;
-                if (th == 0u) {
-                    ALOG("imagery texture miss tile %s", f.key.toString().c_str());
+                uint32_t th = 0u;
+                if (wantImg) {
+                    const auto it = imgTexByTile_.find(f.key);
+                    if (it != imgTexByTile_.end()) {
+                        th = it->second;
+                        ++imgHit;
+                    } else {
+                        th = textureForKey(
+                            imgTexByTile_, imgTexOrder_, f.key,
+                            [this, &imagery, &f]() -> uint32_t {
+                                const auto tr = imagery.fetchTexture(f.key);
+                                if (!tr.has_value()) {
+                                    ALOG("imagery texture miss tile %s",
+                                         f.key.toString().c_str());
+                                    return 0u;
+                                }
+                                return device_->createTexture2D(tr->texture);
+                            },
+                            kTexCap);
+                        ++imgNew;
+                    }
                 }
-                tileTextures_.push_back(wantImg ? th : 0u);
+                tileTextures_.push_back(th);
                 // 路网注记（alpha 保留；缺失或关层 → 0）。
-                const auto lr =
-                    (useImg_ && useLbl_) ? labelImagery.fetchTexture(f.key)
-                                         : std::optional<ImageryTileSource::Result>();
-                labelTextures_.push_back(lr.has_value()
-                                             ? device_->createTexture2D(lr->texture)
-                                             : 0u);
-                if (!wantImg && th != 0u) { // 关影像层仍释放已建纹理
-                    device_->releaseTexture(th);
+                uint32_t lh = 0u;
+                if (useImg_ && useLbl_) {
+                    const auto it = lblTexByTile_.find(f.key);
+                    if (it != lblTexByTile_.end()) {
+                        lh = it->second;
+                        ++lblHit;
+                    } else {
+                        lh = textureForKey(
+                            lblTexByTile_, lblTexOrder_, f.key,
+                            [this, &labelImagery, &f]() -> uint32_t {
+                                const auto lr = labelImagery.fetchTexture(f.key);
+                                if (!lr.has_value()) {
+                                    return 0u;
+                                }
+                                return device_->createTexture2D(lr->texture);
+                            },
+                            kTexCap);
+                        ++lblNew;
+                    }
                 }
+                labelTextures_.push_back(lh);
             }
+            ALOG("S2 tex img(hit=%zu new=%zu n=%zu) lbl(hit=%zu new=%zu n=%zu)", imgHit,
+                 imgNew, imgTexByTile_.size(), lblHit, lblNew, lblTexByTile_.size());
             if (useHgt_) {
-                // 高度纹理：每瓦 grid（缓存命中）→ 裁 cell 512 → RGBA8 编码 → 上传。
-                for (uint32_t th : tileTextures_) {
-                    if (th != 0u) device_->releaseTexture(th);
-                }
-                for (uint32_t lh : labelTextures_) {
-                    if (lh != 0u) device_->releaseTexture(lh);
-                }
+                // 高度纹理（hgt 模式）：每瓦 grid → 裁 cell 512 → RGBA8 → 上传；
+                // 句柄同样持久映射（重建命中免编解码/免新建）。影像/注记 map 句柄不解绑。
                 tileTextures_.clear();
                 labelTextures_.clear();
                 tileTextures_.reserve(frames.size());
                 for (const auto& f : frames) {
+                    const auto it = hgtTexByTile_.find(f.key);
+                    if (it != hgtTexByTile_.end()) {
+                        tileTextures_.push_back(it->second);
+                        continue;
+                    }
                     const auto g = ringSource.requestHeights(scheme, f.key, 512);
                     uint32_t th = 0u;
                     if (g && g->width >= 514 && g->height >= 514) {
@@ -906,10 +970,22 @@ void TerrainScene::ensureGeometry() {
                                     g->heights[static_cast<size_t>(r + 1) * g->width + (c + 1)];
                             }
                         }
-                        const auto enc =
-                            render::HeightTextureCodec::encode(cells, 512, 512);
+                        const auto enc = render::HeightTextureCodec::encode(cells, 512, 512);
                         if (enc.texture.valid()) {
                             th = device_->createTexture2D(enc.texture);
+                        }
+                    }
+                    if (th != 0u) {
+                        hgtTexByTile_.emplace(f.key, th);
+                        hgtTexOrder_.push_back(f.key);
+                        if (hgtTexOrder_.size() > 128u) {
+                            const TileKey oldest = hgtTexOrder_.front();
+                            hgtTexOrder_.erase(hgtTexOrder_.begin());
+                            const auto oit = hgtTexByTile_.find(oldest);
+                            if (oit != hgtTexByTile_.end()) {
+                                device_->releaseTexture(oit->second);
+                                hgtTexByTile_.erase(oit);
+                            }
                         }
                     }
                     tileTextures_.push_back(th);

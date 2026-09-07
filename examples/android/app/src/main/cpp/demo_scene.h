@@ -2,6 +2,8 @@
 
 #include <android/asset_manager.h>
 
+#include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -93,6 +95,17 @@ private:
     std::unique_ptr<earth_engine::TileCacheBytesSource> amapBytesCache_;
     std::unique_ptr<earth_engine::TileCacheBytesSource> labelBytesCache_;
     std::unique_ptr<NasaHttpBytesSource> rawBytesSource_;
+
+    // S2 二刀：逐瓦 GL 纹理句柄持久映射（重建复用；避免每重建解码+新建+泄漏）。
+    uint32_t textureForKey(std::map<earth_engine::TileKey, uint32_t>& map,
+                           std::vector<earth_engine::TileKey>& order, const earth_engine::TileKey& key,
+                           const std::function<uint32_t()>& create, size_t cap);
+    std::map<earth_engine::TileKey, uint32_t> imgTexByTile_;
+    std::map<earth_engine::TileKey, uint32_t> lblTexByTile_;
+    std::map<earth_engine::TileKey, uint32_t> hgtTexByTile_;
+    std::vector<earth_engine::TileKey> imgTexOrder_;
+    std::vector<earth_engine::TileKey> lblTexOrder_;
+    std::vector<earth_engine::TileKey> hgtTexOrder_;
 
     // L3 导航（引擎 MapCameraSystem；默认关 → 基线手势直连不变）。
     bool navEnabled_ = false;

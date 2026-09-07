@@ -102,7 +102,9 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   双指张拢=缩放。
   设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`；
   S2 字节缓存跨重建持久化：logcat `S2 cache ring(hit=.. miss=..)` 显示重建只补新瓦
-  （R1 miss42 → R3 miss72 但 hit20/20；NASA 源重建网络请求从全量降为个位数）。
+  （R1 miss42 → R3 miss72 但 hit20/20；NASA 源重建网络请求从全量降为个位数）；
+  逐瓦 GL 纹理句柄持久复用（logcat `S2 tex img/lbl(hit/new/n)`：R2 hit2/new23，只补新瓦、
+  修复每重建解码+泄漏，hgt 模式同走持久映射）。
   （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住、pan lon 106.440→106.404）。
 - 飞行/平移探针（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`
   （lon,lat,alt,pitch,heading；改值重触发；目标高度低于地表会被贴地抬升到净空之上）；
