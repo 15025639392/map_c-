@@ -130,6 +130,8 @@ set(MAP_RENDERER_SOURCES
     renderer/IRenderDevice.h
     renderer/HeightTextureCodec.h
     renderer/HeightTextureCodec.cpp
+    renderer/DisplacementTemplate.h
+    renderer/DisplacementTemplate.cpp
 )
 
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。

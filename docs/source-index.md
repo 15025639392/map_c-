@@ -37,6 +37,7 @@
 |---|---|
 | IRenderDevice / MeshUploadData / ProgramSource（渲染设备最小面 v2：程序/uniform/clear，S1/L2） | renderer/IRenderDevice.h |
 | HeightTextureCodec（每瓦高度纹理 RGBA8 编码/回读/账，GPU 位移前提） | renderer/HeightTextureCodec.{h,cpp} |
+| buildTileDisplacementTemplate（每瓦椭球面模板网格，位移路径几何核） | renderer/DisplacementTemplate.{h,cpp} |
 
 ## tiling
 | 符号 | 文件 |
