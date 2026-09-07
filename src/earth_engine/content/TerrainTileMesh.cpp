@@ -22,6 +22,17 @@ TerrainMeshData TerrainTileMeshBuilder::build(const HeightmapTile& tile,
     const int stride = nodesPerEdge + 1;
     const int vertexCount = stride * stride;
 
+    // 像素配准（gis-md borderInset 语义，B2）：
+    // - 节点**落位**始终按瓦片边界（网格分数 f ∈ [0,1] ↔ 瓦界）；落位像素 = f·(w-1)；
+    // - 节点**采样**按数据缓冲的配准内缩：px = inset + f·((w-1) − 2·inset)。
+    //   inset=0（顶点栅格）时两者同像素（与旧行为逐位一致）；inset=0.5（cell-
+    //   registered + 1px 重叠环源）时，边界节点读环内邻瓦回填 → 相邻瓦共享边取到
+    //   同一批世界样本（SeamAudit ≈ 0，无缝机制前提；本仓 assets 为无环连续栅格，
+    //   见 a4-merge-plan §7 实测登记——需带环源或边 LUT 才能闭合）。
+    const double inset = tile.borderInset();
+    const double spanX = fw - 2.0 * inset;
+    const double spanY = fh - 2.0 * inset;
+
     mesh.positionsEcef.reserve(static_cast<size_t>(vertexCount));
     mesh.normals.resize(static_cast<size_t>(vertexCount), Vec3::zero());
 
@@ -32,10 +43,15 @@ TerrainMeshData TerrainTileMeshBuilder::build(const HeightmapTile& tile,
 
     for (int row = 0; row < stride; ++row) {
         for (int col = 0; col < stride; ++col) {
-            // 节点 (col,row) → 像素坐标（双线性采样坐标，行 0 = 北）。
-            const double px = static_cast<double>(col) / static_cast<double>(nodesPerEdge) * fw;
-            const double py = static_cast<double>(row) / static_cast<double>(nodesPerEdge) * fh;
-            const Cartographic base = tile.pixelToCartographic(px, py);
+            const double fCol = static_cast<double>(col) / static_cast<double>(nodesPerEdge);
+            const double fRow = static_cast<double>(row) / static_cast<double>(nodesPerEdge);
+            // 落位像素（贴瓦界；pixelToCartographic 用）
+            const double vx = fCol * fw;
+            const double vy = fRow * fh;
+            // 采样像素（数据缓冲下标，配准内缩）
+            const double px = inset + fCol * spanX;
+            const double py = inset + fRow * spanY;
+            const Cartographic base = tile.pixelToCartographic(vx, vy);
             const double h = sampler.sampleBilinear(px, py);
             mesh.positionsEcef.push_back(
                 ellipsoid.cartographicToCartesian(Cartographic(base.longitude(), base.latitude(), h)));

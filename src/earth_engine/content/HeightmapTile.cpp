@@ -17,14 +17,15 @@ constexpr double kNoDataHeightThreshold = 50000.0;
 
 HeightmapTile::HeightmapTile(const WebMercatorTileScheme& scheme, const TileKey& key,
                              const double* heights, int width, int height,
-                             const double* noDataValues, int noDataCount)
+                             const double* noDataValues, int noDataCount, double borderInset)
     : scheme_(&scheme),
       key_(key),
       heights_(heights),
       width_(width),
       height_(height),
       noDataValues_(noDataValues),
-      noDataCount_(noDataCount) {}
+      noDataCount_(noDataCount),
+      borderInset_(borderInset) {}
 
 Rectangle HeightmapTile::coverageRadians() const {
     return scheme_->tileRectangleRadians(key_);

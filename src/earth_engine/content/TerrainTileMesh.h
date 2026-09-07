@@ -25,10 +25,11 @@ struct TerrainMeshData {
 ///
 /// 几何与内容解耦（地形判据 T-E1 的原则 host 侧体现）：
 /// - 几何节点数 nodesPerEdge 与高度图分辨率（tile.width()/height()）相互独立；
-///   节点 (i,j) 的像素坐标 = (i/(n)·(w-1), j/(n)·(h-1))，用双线性采样取高；
-/// - 节点落位走 mercator 米（经 tile.pixelToCartographic），不做经纬线性。
-/// 节点贴瓦片边界：第 0/n 行与第 0/n 列落在瓦边上 → 同级相邻瓦共享边顶点
-/// 可由两侧各自网格精确重合（无缝契约 T-V5 的机制前提）。
+///   节点 (i,j) 的网格分数 = (i/n, j/n)，落位走 mercator 米（贴瓦界）；
+/// - 采样走**数据缓冲**的配准坐标：默认顶点栅格（borderInset=0）时与节点同位；
+///   带 1px 重叠环源（borderInset=0.5，cell-registered）时边界节点读环内邻瓦回填
+///   → 同级相邻瓦共享边取到同一批世界样本（无缝机制前提，T-V5；见 TerrainGrid::
+///   borderInset 与 test_ring_source_seam）。
 class TerrainTileMeshBuilder {
 public:
     /// nodesPerEdge >= 2（网格点 = nodesPerEdge+1 每边）。

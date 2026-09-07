@@ -23,6 +23,14 @@ struct TerrainGrid {
     /// min/max 或边缘双线性（gis-md 根因档案：假深沟/假悬崖法线）。
     std::vector<double> noDataValues;
 
+    /// 像素配准内缩（像元）。描述本瓦解码栅格的**像素与瓦片边界的几何关系**
+    /// （gis-md borderInset 语义；默认 0 = 顶点栅格：像素 0 / w-1 落在瓦片上）：
+    /// - 0.0：顶点栅格源（自产 grid65 / 本仓当前 assets 形态：像素即 post，贴瓦界采样）；
+    /// - 0.5：cell-registered + 1px 重叠环源（如 Mapbox 514：瓦界在半像素处，像素 0 与
+    ///   w-1 是邻瓦回填环）——采样映射内缩后，相邻瓦共享边读到同一批真实世界样本 →
+    ///   同级边无缝（SeamAudit ≈ 0；见 content/SeamAudit.h 与 test_ring_source_seam）。
+    double borderInset = 0.0;
+
     bool empty() const { return heights.empty() || width <= 0 || height <= 0; }
     int count() const { return width * height; }
 };

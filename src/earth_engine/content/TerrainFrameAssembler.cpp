@@ -16,7 +16,8 @@ std::vector<TerrainFrameAssembler::Frame> TerrainFrameAssembler::assemble(
         }
         const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height,
                                  grid->noDataValues.data(),
-                                 static_cast<int>(grid->noDataValues.size()));
+                                 static_cast<int>(grid->noDataValues.size()),
+                                 grid->borderInset);
         Frame frame;
         frame.key = key;
         frame.mesh = meshBuilder.build(tile, ellipsoid, nodesPerEdge);

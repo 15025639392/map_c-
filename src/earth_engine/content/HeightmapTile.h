@@ -28,7 +28,8 @@ class HeightmapTile {
 public:
     HeightmapTile(const WebMercatorTileScheme& scheme, const TileKey& key,
                   const double* heights, int width, int height,
-                  const double* noDataValues = nullptr, int noDataCount = 0);
+                  const double* noDataValues = nullptr, int noDataCount = 0,
+                  double borderInset = 0.0);
 
     const TileKey& key() const { return key_; }
     int width() const { return width_; }
@@ -38,6 +39,8 @@ public:
     /// 本瓦 no-data 哨兵表（可能为 nullptr / count 0 = 无哨兵）。
     const double* noDataValues() const { return noDataValues_; }
     int noDataCount() const { return noDataCount_; }
+    /// 像素配准内缩（见 TerrainGrid::borderInset 注释）。默认 0 = 顶点栅格。
+    double borderInset() const { return borderInset_; }
 
     /// 瓦片覆盖的经纬矩形（弧度；由 scheme 提供）。
     Rectangle coverageRadians() const;
@@ -71,6 +74,7 @@ private:
     int height_;
     const double* noDataValues_ = nullptr;
     int noDataCount_ = 0;
+    double borderInset_ = 0.0;
 };
 
 } // namespace earth_engine
