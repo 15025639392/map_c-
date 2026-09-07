@@ -246,6 +246,7 @@
 | A1 ✅ | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧（全帧 (26,41,71)=glClearColor；见 docs/assets/a1_gles_clear.png，帧号递增 log） |
 | A1 | 最小 Android demo：Gradle + NDK + GLSurfaceView clear 帧 | APK 装模拟器，adb screencap 出非黑帧 |
 | A2 ✅ | host 管线产物（相机→选择→解码→网格）GLES 渲染 | 模拟器 logcat `geometry ready: tiles=25 vertices=7225 triangles=12800`；截图 docs/assets/a2_terrain_rendered*.png（天空区=clear 色与地形区分离）；坡面细节调参属 A3 观感 |
+| A3.0 ✅ | 真 DEM 默认源 + 三机位截图 | DEM 有资产即默认启用；M-near(3km/L13,6瓦) distinct=471、M-mid(15km/L12,48瓦) distinct=390、M-graze(8km/回退矩形,72瓦) distinct=348；截图 docs/assets/a3_realDEM_{Mnear,Mmid,Mgraze}*.png |
 | A2.5 ✅ | **真实 DEM（terrarium 资产）模式**：559 瓦 z10–13（重庆缙云山，28MB assets）；DemAssetSource(AAssetManager)→PNG→Terrarium 解码(256²)→分带选择(alt→L10..13)→网格33段 | `debug.mapc.dem=1`；M-mid 15km/L12: 48瓦·10.4万三角形；M-near 3km/L13: 6瓦；截图 docs/assets/a3_realDEM_*.png（distinct 390/471，山脊沟谷连续明暗） |
 | A3 🔄 | 固定机位渲染 + **手势相机**（拖动=俯仰/航向、双指=高度；adb input swipe 可驱动） | station=1/2/3 切换 + 手势 setCamera→几何重建；截图 docs/assets/a3_station*.png、a3_interactive_*.png（掠视 pitch2° 视角 distinct=186，剪影可辨）；hypsometric 着色 + 半球漫反射；平滑/细节待用户观感拍板 |
 | A4 | 并入 gis-md 现成地形服务（stage6-merge-checkpoint） | 整链对照 + 判据表逐条回填 |

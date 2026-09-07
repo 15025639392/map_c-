@@ -210,10 +210,13 @@ void TerrainScene::initializeGl() {
     }
     ALOG("station=%d", station_);
     char demProp[PROP_VALUE_MAX] = {0};
-    if (__system_property_get("debug.mapc.dem", demProp) > 0 && demProp[0] == '1') {
-        useDem_ = true;
+    const int propLen = __system_property_get("debug.mapc.dem", demProp);
+    if (propLen <= 0) {
+        useDem_ = (assetManager_ != nullptr); // 默认：有 DEM 资产即真地形
+    } else {
+        useDem_ = (demProp[0] == '1');
     }
-    ALOG("dem mode=%d", useDem_ ? 1 : 0);
+    ALOG("dem mode=%d (assetMgr=%d)", useDem_ ? 1 : 0, assetManager_ != nullptr ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.42f, 0.55f, 0.74f, 1.0f); // 天蓝
@@ -344,10 +347,10 @@ void TerrainScene::ensureGeometry() {
             camHeadingDeg_ = hdgDeg = 200.0;
             lod.maxScreenSpaceErrorPx = 3.0;
             break;
-        default: // M-graze 8000m pitch −10（近掠视）
+        default: // M-graze 8000m pitch −12（近掠视；目标在 DEM 资产窗口内）
             camAltMeters_ = altMeters = 8000.0;
-            camPitchDeg_ = pitchDeg = 10.0;
-            camHeadingDeg_ = hdgDeg = 200.0;
+            camPitchDeg_ = pitchDeg = 12.0;
+            camHeadingDeg_ = hdgDeg = 250.0;
             lod.maxScreenSpaceErrorPx = 4.0;
             break;
         }
@@ -378,10 +381,17 @@ void TerrainScene::ensureGeometry() {
         }
         DemAssetSource demSource(assetManager_);
         const int level = bandLevelForAltitudeMeters(camAltMeters_);
+        Rectangle bandRect;
         if (footOpt) {
-            frames = buildDemFrames(scheme, demSource, footOpt.value(), e, level, 33);
+            bandRect = footOpt.value();
+        } else {
+            // 脚印空（如近掠视角上角射线出太空）：回退到相机正下区域。
+            bandRect = Rectangle::fromDegrees(camLonDeg_ - 0.35, camLatDeg_ - 0.25,
+                                              camLonDeg_ + 0.35, camLatDeg_ + 0.25);
         }
-        ALOG("dem band level=%d tiles=%zu", level, frames.size());
+        frames = buildDemFrames(scheme, demSource, bandRect, e, level, 33);
+        ALOG("dem band level=%d tiles=%zu foot=%d", level, frames.size(),
+             footOpt.has_value() ? 1 : 0);
     } else {
         const FunctionalTerrainSource source;
         TerrainLodResult selection;
