@@ -34,11 +34,22 @@ set(MAP_CORE_GEODESY_SOURCES
     core/geodesy/RayEllipsoid.cpp
     core/geodesy/Projection.h
     core/geodesy/Projection.cpp
+    core/geodesy/QuadtreeGeometricError.h
+    core/geodesy/QuadtreeGeometricError.cpp
     core/geodesy/Transforms.h
     core/geodesy/Transforms.cpp
+)
+
+# tiling：瓦片键/四叉树与瓦片 scheme（纯数学，无引擎依赖；阶段 3 起）。
+# gis-md 同名模块承载瓦片树/LOD/调度——本仓从瓦片网格地基开始，逐轮扩充。
+set(MAP_TILING_SOURCES
+    tiling/TileKey.h
+    tiling/WebMercatorTileScheme.h
+    tiling/WebMercatorTileScheme.cpp
 )
 
 target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_MATH_SOURCES}
     ${MAP_CORE_GEODESY_SOURCES}
+    ${MAP_TILING_SOURCES}
 )

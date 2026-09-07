@@ -32,7 +32,7 @@
 | **0** | 项目骨架：CMake/presets/env/test_native.sh、模块目录、gtest 冒烟 | `cmake --preset native-tests && ctest` 全绿 | ✅ 2026-09-08 |
 | **1** | 核心数学与坐标：WGS84 椭球、Cartographic、Vec3、Mat4、Ray、Rectangle、Transforms(ENU)、ECEF↔cartographic | geodesy/core 单测全绿（赤道/极区/高海拔/负高全覆盖） | ✅ 2026-09-08（见下） |
 | **2** | 可旋转地球：相机模型（位置/朝向）、视线-椭球求交、射线拾取地基、渲染抽象（RenderDevice 接口层，先 host 空实现 + 用例） | 求交/拾取/矩阵单测绿；无 GPU 的帧状态机单测 | 🔄 部分（求交已落地，相机/渲染待续） |
-| **3** | 单一 XYZ 底图：WebMercator/Geographic tile scheme、瓦片键/四叉树、Provider 接口 + HTTP（先本地 fixture） | scheme/投影/四叉树/提供者单测绿 | 🔄 部分（投影已落地，scheme/四叉树待续） |
+| **3** | 单一 XYZ 底图：WebMercator/Geographic tile scheme、瓦片键/四叉树、Provider 接口 + HTTP（先本地 fixture） | scheme/投影/四叉树/提供者单测绿 | 🔄 部分（瓦片键/四叉树/scheme/SSE 已落地，Provider/HTTP 待续） |
 | **4** | 多图层与多瓦片体系：TMS/XYZ/WMTS 差异、矩形覆盖/交叉、SSE(LOD 几何误差)、调度与预算骨架 | 调度/预算/选择器单测绿 | ⬜ |
 | **5** | 矢量叠加与样式（低优先，先保地形主线） | — | ⬜ |
 | **6** | **地形（最高优先）**：按 terrain.md 判据落地；**并入 gis-md 现成地形服务**；高度图 → 瓦片树 → LOD → 无缝（瓦界 <1m / 换代不可见 / 利用率 ≥1/4 于 T-E1） | terrain 判据表逐条回填 ✅ 需 host 可跑证据；观感类标注 🔒 待用户上屏拍板 | ⬜ |
@@ -66,6 +66,19 @@
   直下命中/极区/外切 miss/内部起点/300 km 相机对地命中（相对误差 ≤1e-9）、
   往返精度、180° 与纬度上限已知值、单调性、有限差分导数互验。当前共 11 套件全绿。
 - 下一步：阶段 2 的相机模型与拾取地基、阶段 3 的瓦片键/四叉树与 Provider。
+
+### 阶段 3 瓦片地基增量（2026-09-08）
+
+- `tiling/TileKey.h`——瓦片键 z/x/y + 四叉树（parent/children/ancestor）、isValid、
+  哈希/排序（行优先）、"z/x/y" 字符串（header-only）。
+- `tiling/WebMercatorTileScheme.{h,cpp}`——Web Mercator 正方形世界瓦片网格：
+  **XYZ 顶层原点**（y=0 最北行，y 向南，与 OSM/NASA Terrain-RGB URL 模板一致）；
+  瓦片西南角/尺寸（投影米）、经纬矩形、点（投影米/经纬）→ 键；
+  纬度越出 ±85.05112878° 判世界外（不静默钳制）。
+- `core/geodesy/QuadtreeGeometricError.{h,cpp}`——屏幕空间误差
+  `sse = e / (2d·tan(fov/2)) · viewportHeight`（**地形 LOD 细化的判定公式**）+ shouldRefine。
+- 单测 +3 套件（test_tile_key / test_tile_scheme / test_quadtree_geometric_error），
+  覆盖四叉树关系、子瓦片边界共边、往返、世界外、SSE 单调性与退化输入。当前 14 套件全绿。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
