@@ -47,9 +47,10 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**53 个 gtest 套件全绿零告警**（2026-09-09）。地形链路 44 + L1/L2 系列：缓存×2/影像退化链
-与瓦源装配（ImageryTileSource）/相机运动族/渲染抽象（IRenderDevice 纹理+UV 设备验证）/
-PngToRgba8 影像瓦→纹理数据腿。
+**54 个 gtest 套件全绿零告警**（2026-09-09 复核：native 从零 54/54、全新 clone 54/54）。
+地形链路 44 + L1/L2 系列：缓存×2/退化链与瓦源装配（含 keepAlpha）/相机运动族/渲染抽象
+（IRenderDevice 纹理+UV+DrawList 设备验证）/PngToRgba8/RGBA alpha。真实内容三层同屏：
+NASA DEM 高度 + 高德卫星（style=6）+ 路网注记（style=8），图层开关 img/lbl。
 host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
 拾取，外加帧缓存增量、同级/跨级共享边审计（`SeamAudit`）、**带重叠环源采样（borderInset, B2）**

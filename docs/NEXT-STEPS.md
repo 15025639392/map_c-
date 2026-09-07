@@ -5,9 +5,9 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 53/53 绿。地形链路 44 + L1/L2：缓存×2/退化链/瓦源装配
-（ImageryTileSource：决议→取瓦→纹理数据）/相机族/渲染抽象（纹理+UV 设备验证）
-/PngToRgba8——host 先行。
+- Host：`./test_native.sh` → 54/54 绿。地形链路 44 + L1/L2：缓存×2/退化链/瓦源装配
+（ImageryTileSource keepAlpha）/相机族/渲染抽象（纹理+UV+DrawList+图层开关 设备验证）
+/PngToRgba8/RGBA——host 先行。真实内容三层同屏（NASA DEM+高德卫星+注记）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
