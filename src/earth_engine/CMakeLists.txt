@@ -119,6 +119,8 @@ set(MAP_PROVIDERS_SOURCES
 set(MAP_IMAGERY_SOURCES
     imagery/ImageryTileAvailability.h
     imagery/ImageryTileAvailability.cpp
+    imagery/ImageryTileSource.h
+    imagery/ImageryTileSource.cpp
 )
 
 # renderer：渲染抽象（S1/L2 第一步）——设备接口层，host 先行，无图形头。

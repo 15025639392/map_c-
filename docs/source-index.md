@@ -30,6 +30,7 @@
 | 符号 | 文件 |
 |---|---|
 | resolveImageryTile / ImageryTileResolution（影像缺瓦→祖先退化决议，S4 语义先行） | imagery/ImageryTileAvailability.{h,cpp} |
+| ImageryTileSource（决议×字节源×PNG→纹理数据 装配链，S4） | imagery/ImageryTileSource.{h,cpp} |
 
 ## renderer
 | 符号 | 文件 |

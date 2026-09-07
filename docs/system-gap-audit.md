@@ -35,8 +35,8 @@ demo 场景与简易手势输入。
 UV/纹理账，截图 tex_overlay_Mmid.png）——影像同屏/GPU 高度纹理通道就绪；观感判据可测化打通 |
 | **S2** | **资源-调度-流水线** | 无并发加载/解码 worker、优先级队列、去重、磁盘/内存缓存、按瓦预算、**帧收敛申报**、换代状态机、失效取消。后果：M-coarse 首帧 323 瓦 ≈40s | 七段流水线判据（T-E1~T-E5、T-E4 帧收敛纪律、T-P7/T-P8） | 已有 ITerrainDataSource / ITileBytesSource / TerrainFrameCache / AncestorFallbackDataSource / 装饰器组合。**L1 已落**：TileCacheBytesSource + DiskTileCacheBytesSource（内存+磁盘缓存）→ 下一步并发/预算层 |
 | **S3** | **场景/图层系统** | 无图层栈（顺序/透明度/生命周期/样式开关/内容路由）；现在是"固定 demo 场景"，接不了第二图层 | 影像/矢量/标注都挂在图层栈上 | 在 demoscene 之上加 Scene/Layer 抽象，复用现有帧集合形态 |
-| **S4** | **影像系统** | 无影像 provider（XYZ/WMTS/…）、无纹理上传预算 | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板。**L1/L2 已落**：ImageryTileAvailability（退化决议）+ PngToRgba8（PNG 瓦→RGBA8 纹理数据）+ demo
-纹理通道（棋盘叠影验证 sampler）→ 下一步接真实影像源 |
+| **S4** | **影像系统** | 无影像 provider（XYZ/WMTS/…）、无纹理上传预算 | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板。**L1/L2 已落**：退化决议 + ImageryTileSource（决议→取瓦→纹理数据装配链，host）+ PngToRgba8 +
+demo 纹理通道 → 下一步接真实影像源（纹理替换/图层接入） |
 | **S5** | **矢量与标注** | 零行：矢量瓦解码（MVT…）、样式/换肤、贴地不浮、字体图集标注、线宽/字号屏幕恒定 | ★ 矢量（阶段 5） | 拾取/查询走 TerrainPicking 扩展；高度贴地依赖现有查高服务 |
 | **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有。**L1 已落**：CameraMotion + TerrainGroundGuard + CameraNavController（运动/不穿地/联动控制器）→ 下一步手势输入层接线 |
 | **S7** | **光照/大气/颜色系统** | 无太阳/天光模型、无大气散射/雾（空气透视）、无 tonemap/颜色管理（北极星：亮部超范围优雅压回） | ★ 光照/颜色（阶段 9） | demo 现简单半球漫反射着色器是出发点 |
