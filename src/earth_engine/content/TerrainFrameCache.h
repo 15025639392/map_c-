@@ -3,6 +3,7 @@
 #include <map>
 #include <vector>
 
+#include "../camera/Frustum.h"
 #include "TerrainDataSource.h"
 #include "TerrainFrameAssembler.h"
 #include "../camera/CameraView.h"
@@ -28,7 +29,8 @@ public:
         size_t evicted = 0;   // 淘汰的旧瓦数
         size_t frameCount = 0;
     };
-    UpdateReport update(const CameraView& camera, const TerrainLodConfig& lodConfig);
+    UpdateReport update(const CameraView& camera, const TerrainLodConfig& lodConfig,
+                        const Frustum* frustum = nullptr);
 
     /// 当前帧（按 TileKey 排序；与缓存内对象同源）。
     const std::vector<TerrainFrameAssembler::Frame>& frames() const { return frames_; }

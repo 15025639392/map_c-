@@ -1,6 +1,7 @@
 #include "earth_engine/tiling/TerrainLodSelector.h"
 
 #include <algorithm>
+#include <cmath>
 #include <deque>
 
 #include "earth_engine/core/geodesy/QuadtreeGeometricError.h"
@@ -20,6 +21,13 @@ bool TerrainLodSelector::rectanglesIntersect(const Rectangle& a, const Rectangle
 
 namespace {
 
+/// 瓦片中心地表 ECEF（高 0）。
+Vec3 tileCenterEcef(const WebMercatorTileScheme& scheme, const Ellipsoid& ellipsoid,
+                    const TileKey& key) {
+    const Cartographic center = scheme.unprojectMeters(scheme.tileCenterMeters(key));
+    return ellipsoid.cartographicToCartesian(center);
+}
+
 /// 相机到瓦覆盖区域（经纬矩形）的最近地表点 ECEF 距离。
 /// 大瓦可能覆盖相机正下方：取"瓦内离相机最近的地表点"而非瓦中心，
 /// 否则根瓦/大瓦中心在地球另一侧会把距离算成半个行星（SSE 失真）。
@@ -37,7 +45,8 @@ double distanceToTileRegion(const Ellipsoid& ellipsoid, const Vec3& cameraEcef,
 TerrainLodResult TerrainLodSelector::selectTiles(const WebMercatorTileScheme& scheme,
                                                  const Vec3& cameraPositionEcef,
                                                  const Rectangle& interestRadians,
-                                                 const TerrainLodConfig& config) const {
+                                                 const TerrainLodConfig& config,
+                                                 const Frustum* frustum) const {
     TerrainLodResult result;
     const Ellipsoid& ellipsoid = Ellipsoid::WGS84();
 
@@ -55,6 +64,15 @@ TerrainLodResult TerrainLodSelector::selectTiles(const WebMercatorTileScheme& sc
         const Rectangle rect = scheme.tileRectangleRadians(key);
         if (!rectanglesIntersect(rect, interestRadians)) {
             continue; // 兴趣矩形外，剪枝
+        }
+        if (frustum != nullptr) {
+            // 可选视锥剪枝：瓦包围球（地表中心 + 半对角线半径）完全在视锥外 → 剪。
+            const Vec3 center = tileCenterEcef(scheme, ellipsoid, key);
+            const double halfDiagonal =
+                scheme.tileSizeMeters(key.z()).x() * std::sqrt(2.0) * 0.5;
+            if (!frustum->intersectsSphere(center, halfDiagonal)) {
+                continue;
+            }
         }
 
         const int z = key.z();

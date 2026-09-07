@@ -228,6 +228,14 @@
 - 单测 +1 套件（test_frustum）：简单笛卡尔几何（fov90/aspect1 的半宽=深度）、
   近平面背后剔除、ECEF 相机下目标区在内/地球对侧在外。32 套件全绿。
 
+### 视锥剪枝接入选择（2026-09-08）
+
+- `TerrainLodSelector::selectTiles(..., const Frustum*)` 可选视锥剪枝：瓦包围球
+  （地表中心 + 半对角线）与视锥无交则剪（默认 nullptr 不改既有行为/基线）。
+- `TerrainFrameCache::update(..., const Frustum*)` 透传。
+- 单测 +2（test_terrain_lod_selector）：窄视场剪掉更多瓦（细阈值下 >0 且 < 宽视场）、
+  朝天视锥（带近平面）兴趣窗内全剪 → 空。32 套件全绿零告警。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：

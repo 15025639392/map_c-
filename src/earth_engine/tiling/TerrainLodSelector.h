@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "../camera/Frustum.h"
 #include "../core/geodesy/Ellipsoid.h"
 #include "../core/math/Rectangle.h"
 #include "../core/math/Vec3.h"
@@ -52,7 +53,8 @@ public:
     TerrainLodResult selectTiles(const WebMercatorTileScheme& scheme,
                                  const Vec3& cameraPositionEcef,
                                  const Rectangle& interestRadians,
-                                 const TerrainLodConfig& config = TerrainLodConfig()) const;
+                                 const TerrainLodConfig& config = TerrainLodConfig(),
+                                 const Frustum* frustum = nullptr) const;
 
     /// 两个（弧度，无跨缝）矩形是否相交。
     static bool rectanglesIntersect(const Rectangle& a, const Rectangle& b);

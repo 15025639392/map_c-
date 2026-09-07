@@ -14,15 +14,17 @@ TerrainFrameCache::TerrainFrameCache(const WebMercatorTileScheme& scheme,
       nodesPerEdge_(nodesPerEdge) {}
 
 TerrainFrameCache::UpdateReport TerrainFrameCache::update(const CameraView& camera,
-                                                          const TerrainLodConfig& lodConfig) {
+                                                          const TerrainLodConfig& lodConfig,
+                                                          const Frustum* frustum) {
     UpdateReport report;
 
-    // 1) 脚印 → 选择（期望瓦集合）。
+    // 1) 脚印 → 选择（期望瓦集合；可选视锥剪枝）。
     const TerrainLodSelector selector;
     std::vector<TileKey> desired;
     if (const std::optional<Rectangle> footprint = camera.groundFootprintRadians(ellipsoid_)) {
         const TerrainLodResult selection =
-            selector.selectTiles(scheme_, camera.position(), footprint.value(), lodConfig);
+            selector.selectTiles(scheme_, camera.position(), footprint.value(), lodConfig,
+                                 frustum);
         desired = selection.tiles;
     }
     std::sort(desired.begin(), desired.end());

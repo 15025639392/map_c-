@@ -4,6 +4,8 @@
 #include <cmath>
 #include <map>
 
+#include "earth_engine/camera/CameraView.h"
+#include "earth_engine/camera/Frustum.h"
 #include "earth_engine/core/geodesy/QuadtreeGeometricError.h"
 #include "earth_engine/tiling/TerrainLodSelector.h"
 
@@ -205,4 +207,57 @@ TEST(TerrainLodSelector, DeterministicForSameInputs) {
     for (size_t i = 0; i < r1.tiles.size(); ++i) {
         EXPECT_EQ(r1.tiles[i], r2.tiles[i]);
     }
+}
+
+TEST(TerrainLodSelector, FrustumCullNarrowerFovFewerTiles) {
+    const WebMercatorTileScheme scheme;
+    const TerrainLodSelector selector;
+    const Cartographic ground = Cartographic::fromDegrees(106.5, 29.7, 0.0);
+    const Rectangle interest = interestAround(ground, 1.0);
+    const Ellipsoid& e = Ellipsoid::WGS84();
+    const Vec3 pos = e.cartographicToCartesian(
+        Cartographic(ground.longitude(), ground.latitude(), 100000.0));
+    const Vec3 up = e.geodeticSurfaceNormal(ground);
+
+    TerrainLodConfig config;
+    config.maxScreenSpaceErrorPx = 0.5; // 细阈值 → 多瓦场景，视锥差异才可分辨
+    config.geometricErrorScale = 0.001;
+    config.maxLevel = 13;
+
+    const CameraView wide(pos, e.cartographicToCartesian(ground), up, degreesToRadians(90.0),
+                           4.0 / 3.0);
+    const CameraView narrow(pos, e.cartographicToCartesian(ground), up, degreesToRadians(20.0),
+                            4.0 / 3.0);
+    const Frustum fWide = Frustum::fromCamera(wide);
+    const Frustum fNarrow = Frustum::fromCamera(narrow);
+
+    const auto rWide = selector.selectTiles(scheme, pos, interest, config, &fWide);
+    const auto rNarrow = selector.selectTiles(scheme, pos, interest, config, &fNarrow);
+    EXPECT_GT(rWide.tiles.size(), 0u);
+    EXPECT_GT(rNarrow.tiles.size(), 0u);
+    // 窄视场（±1° 兴趣窗内只露出中心一小块）→ 被视锥剪掉的瓦更多。
+    EXPECT_LT(rNarrow.tiles.size(), rWide.tiles.size());
+}
+
+TEST(TerrainLodSelector, FrustumLookingAwayYieldsEmpty) {
+    const WebMercatorTileScheme scheme;
+    const TerrainLodSelector selector;
+    const Cartographic ground = Cartographic::fromDegrees(106.5, 29.7, 0.0);
+    const Rectangle interest = interestAround(ground, 0.5);
+    const Ellipsoid& e = Ellipsoid::WGS84();
+    const Vec3 pos = e.cartographicToCartesian(
+        Cartographic(ground.longitude(), ground.latitude(), 300000.0));
+    // 视线朝天：frustum 不朝地球 → 兴趣矩形内所有瓦被剪光。
+    const CameraView away(pos, pos + (pos - Vec3::zero()).normalized(), Vec3(0.0, 0.0, 1.0),
+                          degreesToRadians(60.0), 1.0);
+    // 带近平面：脚底下方的地表瓦相对视线在背后 → 可被剔除。
+    const Frustum f = Frustum::fromCamera(away, /*near=*/1000.0);
+
+    TerrainLodConfig config;
+    config.maxScreenSpaceErrorPx = 0.5; // 细瓦（半径≪相机高）才可被近平面分离
+    config.maxLevel = 13;
+    const auto withoutFrustum = selector.selectTiles(scheme, pos, interest, config, nullptr);
+    EXPECT_GT(withoutFrustum.tiles.size(), 0u);
+    const auto withFrustum = selector.selectTiles(scheme, pos, interest, config, &f);
+    EXPECT_TRUE(withFrustum.tiles.empty());
 }
