@@ -177,7 +177,20 @@
 - 单测 +2 套件（test_tile_url_formatter / test_terrain_rgb_source）：模板替换/重复
   占位/未知占位保留；fixture 字节解码逐点对照 fn（±0.06m 量化容差）、URL 传参、
   畸形/缺失拒绝、**RGB fixture → camera 管线 → 出帧 → 拾取**端到端。当前 27 套件全绿。
-- 下一步：视锥精确剪枝 / 真实 PNG+HTTP（stb/curl）接入。
+
+### 真实瓦片字节形态：PNG（2026-09-08）
+
+- 依赖接入：CMake 复用 `GIS_MD_VCPKG_INSTALLED/include`（stb 等，env.sh 设定）；
+  仅库内使用（测试不被第三方头污染 gtest 解析）。
+- `providers/StbPngDecoder.{h,cpp}`——stb_image 解码 PNG → RGB 行（首行=顶=北，
+  统一 3 通道，STBI_ONLY_PNG）。
+- `providers/TerrainRgbPngTileSource.{h,cpp}`——Terrain-RGB **PNG** 高度源：
+  PNG 字节 → 解码 → Terrain-RGB → TerrainGrid（真实源 NASA Terrain-RGB 的字节形态）。
+- 单测 +1 套件（test_png_terrain_source）：测试内置**自写最小 PNG 编码器**
+  （stored-deflate + CRC32/ADLER，不用第三方测试头）生成 fixture →
+  库内 stb 解码互验（两条独立实现互相校验）；逐点对照 fn ±0.06m；垃圾字节/
+  尺寸不符拒绝。当前 28 套件全绿。
+- 下一步：curl HTTP 字节源（ITileBytesSource 的网路实现），或视锥精确剪枝/渲染抽象。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 

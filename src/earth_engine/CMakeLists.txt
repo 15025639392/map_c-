@@ -77,14 +77,21 @@ set(MAP_CAMERA_SOURCES
     camera/TerrainCameraPipeline.cpp
 )
 
-# providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源）。
+# providers：瓦片数据源（URL 模板 + 字节源 + Terrain-RGB 高度源 + PNG 解码）。
 set(MAP_PROVIDERS_SOURCES
     providers/TileUrlFormatter.h
     providers/TileUrlFormatter.cpp
     providers/ITileBytesSource.h
     providers/TerrainRgbTileSource.h
     providers/TerrainRgbTileSource.cpp
+    providers/StbPngDecoder.h
+    providers/StbPngDecoder.cpp
+    providers/TerrainRgbPngTileSource.h
+    providers/TerrainRgbPngTileSource.cpp
 )
+
+# stb/glm/curl 等第三方头（GIS_MD_VCPKG_INSTALLED/include，只读复用）。
+target_include_directories(earth_engine_core PRIVATE ${MAP_THIRDPARTY_INCLUDE_DIR})
 
 target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_MATH_SOURCES}
