@@ -75,6 +75,19 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
   gis-md 现成地形服务（解码/查高/调度件 → 适配到 ITerrainDataSource 等接口），
   渲染与自写机制保留；不整体 vendor 16 万行 core。
 
+
+## 7. 验收证据清单（2026-09-08 快照）
+
+目标条款④两条验收逐项对证据：
+
+| 验收项 | 证据 | 状态 |
+|---|---|---|
+| host native 编译 + 地形相关 gtest 全绿 | `./test_native.sh` 34/34 全绿零告警（干净重建复核过）；含地形链路套件（codec/sampler/tile/mesh/frame/selector/pipeline/五机位回归等） | ✅ |
+| Android 模拟器可渲染地形帧并出截图 | `com.mapcplus.terrain` 于 Pixel_7_API_35（GLES3）运行：五固定机位（station1..5 预设）真 terrarium DEM WGS84 ECEF 出帧；`geometry ready` 日志 + 截图 docs/assets/station1..5.png、evidence.md ASCII 包 | ✅ |
+
+观感判据初判（T-V1/T-V6/T-V12…）与 A4 并入（选择性适配 gis-md 服务）为下一步开放项，
+等待用户拍板（截图/预案已备）。仓库本地 HEAD = 远端 main（36 提交）。
+
 ## 5. 能力 × 阶段 × 判据映射与缺口（2026-09-08 收官快照）
 
 | 能力（本仓 host，测试背书） | 路线图阶段 | 相关判据（机制部分） | 缺口 |
