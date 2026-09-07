@@ -46,6 +46,8 @@ set(MAP_TILING_SOURCES
     tiling/TileKey.h
     tiling/WebMercatorTileScheme.h
     tiling/WebMercatorTileScheme.cpp
+    tiling/TerrainLodSelector.h
+    tiling/TerrainLodSelector.cpp
 )
 
 # content：地形内容（高度图编解码/采样）。gis-md 同名模块含 heightmap/glTF/

@@ -48,11 +48,12 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 ## 4. 当前状态（2026-09-08）
 
-- 仓库骨架、构建（host native, cmake+ninja+googletest）、18 个 gtest 套件全绿。
+- 仓库骨架、构建（host native, cmake+ninja+googletest）、19 个 gtest 套件全绿。
 - 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/Rectangle；Ellipsoid（WGS84 双向转换、法线、地表投影）；
   Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；Geographic/WebMercator 投影；
   瓦片键/四叉树 + WebMercatorTileScheme + SSE；高度图编解码（Terrain-RGB/Terrarium）+
-  规则网格采样 + HeightmapTile（mercator 米映射查高）+ **TerrainTileMesh（ECEF 地形网格，
-  同级相邻瓦共享边顶点逐点重合——无缝契约机制地基）**。
-- 未开始：相机模型/拾取、Provider、瓦片树→查高→网格装配、渲染抽象、地形链路。
+  规则网格采样 + HeightmapTile（mercator 米映射查高）+ TerrainTileMesh（ECEF 网格，
+  同级相邻瓦共享边逐点重合）+ **TerrainLodSelector（SSE 驱动四叉树 LOD 选择，
+  相机到瓦区域最近点距离）**。
+- 未开始：选中瓦→解码→网格的"地形帧"装配、相机模型/拾取、Provider、渲染抽象。
   全部地形判据 ❌（见 terrain.md 跟踪表）。
