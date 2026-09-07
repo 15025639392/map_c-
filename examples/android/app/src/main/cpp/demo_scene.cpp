@@ -204,7 +204,7 @@ void TerrainScene::initializeGl() {
     char buf[PROP_VALUE_MAX] = {0};
     if (__system_property_get("debug.mapc.station", buf) > 0 && buf[0] != '\0') {
         station_ = std::atoi(buf);
-        if (station_ < 1 || station_ > 3) {
+        if (station_ < 1 || station_ > 5) {
             station_ = 2;
         }
     }
@@ -333,25 +333,40 @@ void TerrainScene::ensureGeometry() {
     double pitchDeg = camPitchDeg_;
     double hdgDeg = camHeadingDeg_;
     if (!cameraUserSet_) {
+        // 判据文档固定机位（docs/northstar/terrain.md）：camH/pitch/heading 直译。
+        // pitch = 视线相对地平线向下角（文档 pitch −x → 此处 +x）；
+        // heading = 视线方位 0=北 顺时针。
         switch (station_) {
-        case 1: // M-near 3000m pitch −60
+        case 1: // M-near 3000m −60° 20°
             camAltMeters_ = altMeters = 3000.0;
             camPitchDeg_ = pitchDeg = 60.0;
-            camHeadingDeg_ = hdgDeg = 200.0;
+            camHeadingDeg_ = hdgDeg = 20.0;
             lod.maxScreenSpaceErrorPx = 0.8;
             lod.maxLevel = 17;
             break;
-        case 2: // M-mid 15000m pitch −45
+        case 2: // M-mid 15000m −45° 20°
             camAltMeters_ = altMeters = 15000.0;
             camPitchDeg_ = pitchDeg = 45.0;
-            camHeadingDeg_ = hdgDeg = 200.0;
+            camHeadingDeg_ = hdgDeg = 20.0;
             lod.maxScreenSpaceErrorPx = 3.0;
             break;
-        default: // M-graze 8000m pitch −12（近掠视；目标在 DEM 资产窗口内）
+        case 3: // M-graze 8000m −10° 20°
             camAltMeters_ = altMeters = 8000.0;
-            camPitchDeg_ = pitchDeg = 12.0;
-            camHeadingDeg_ = hdgDeg = 250.0;
+            camPitchDeg_ = pitchDeg = 10.0;
+            camHeadingDeg_ = hdgDeg = 20.0;
             lod.maxScreenSpaceErrorPx = 4.0;
+            break;
+        case 4: // M-high 60000m −30° 20°
+            camAltMeters_ = altMeters = 60000.0;
+            camPitchDeg_ = pitchDeg = 30.0;
+            camHeadingDeg_ = hdgDeg = 20.0;
+            lod.maxScreenSpaceErrorPx = 6.0;
+            break;
+        default: // M-coarse 250km −20° 20°
+            camAltMeters_ = altMeters = 250000.0;
+            camPitchDeg_ = pitchDeg = 20.0;
+            camHeadingDeg_ = hdgDeg = 20.0;
+            lod.maxScreenSpaceErrorPx = 12.0;
             break;
         }
     }

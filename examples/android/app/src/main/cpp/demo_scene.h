@@ -31,7 +31,7 @@ private:
     bool geometryReady_ = false;
     int width_ = 1080;
     int height_ = 2400;
-    int station_ = 2; // debug.mapc.station: 1=M-near 2=M-mid 3=M-graze
+    int station_ = 2; // debug.mapc.station: 1=M-near 2=M-mid 3=M-graze 4=M-high 5=M-coarse
     long frameCount_ = 0;
     long tilesDrawn_ = 0;
     int totalVertices_ = 0;
