@@ -48,8 +48,18 @@ set(MAP_TILING_SOURCES
     tiling/WebMercatorTileScheme.cpp
 )
 
+# content：地形内容（高度图编解码/采样）。gis-md 同名模块含 heightmap/glTF/
+# 上采样/位移模板；本仓从编解码地基开始，与地形链路同步扩充。
+set(MAP_CONTENT_SOURCES
+    content/HeightmapCodec.h
+    content/HeightmapCodec.cpp
+    content/HeightmapSampler.h
+    content/HeightmapSampler.cpp
+)
+
 target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_MATH_SOURCES}
     ${MAP_CORE_GEODESY_SOURCES}
     ${MAP_TILING_SOURCES}
+    ${MAP_CONTENT_SOURCES}
 )

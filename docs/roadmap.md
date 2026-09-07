@@ -80,6 +80,18 @@
 - 单测 +3 套件（test_tile_key / test_tile_scheme / test_quadtree_geometric_error），
   覆盖四叉树关系、子瓦片边界共边、往返、世界外、SSE 单调性与退化输入。当前 14 套件全绿。
 
+### 地形内容地基（2026-09-08，朝阶段 6 数据链路）
+
+- `content/HeightmapCodec.{h,cpp}`——高度图像素编解码（纯函数，无图像 IO）：
+  Terrain-RGB（Mapbox，h=-10000+(RGB)·0.1，量化 0.1m）+ Terrarium（Mapzen）；
+  编码取整 + 越界钳制；整张行缓冲解码（行级 stride，首行=北，与 XYZ 顶行一致）。
+  与 gis-md 的编解码语义对齐（其 HeightmapTerrainContentProvider 用 NASA Terrain-RGB）。
+- `content/HeightmapSampler.{h,cpp}`——规则网格采样：nearest + 双线性（CLAMP_TO_EDGE），
+  双线性精确重建线性场；供将来"查高/贴地/无缝边吸附"复用。
+- 单测 +2 套件（test_heightmap_codec / test_heightmap_sampler）含解码→采样集成冒烟。
+  当前 16 套件全绿。
+- 下一步：相机/拾取 + Provider 接口（网络留到引入 curl 依赖时），再往后是"瓦片→内容"装配。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：
