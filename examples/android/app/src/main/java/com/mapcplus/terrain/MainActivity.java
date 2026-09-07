@@ -12,6 +12,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         glView = new GLSurfaceView(this);
         NativeRenderer.setAssetManager(getAssets());
+        // S2 三刀：瓦片磁盘缓存根目录（filesDir/tilecache；内存→磁盘→网络三层）。
+        NativeRenderer.setFilesDir(getFilesDir().getAbsolutePath() + "/tilecache");
         // GLES 3 上下文（A2 起地形渲染需要）。
         glView.setEGLContextClientVersion(3);
         glView.setRenderer(new NativeRenderer());

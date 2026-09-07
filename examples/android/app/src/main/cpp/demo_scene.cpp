@@ -6,6 +6,7 @@
 #include <GLES3/gl3.h>
 
 #include <android/log.h>
+#include <sys/stat.h>
 #include <sys/system_properties.h>
 #include <chrono>
 #include <cmath>
@@ -44,6 +45,20 @@ using namespace earth_engine;
 namespace demoscene {
 
 namespace {
+
+// 逐段建目录（存在即忽略 EEXIST；S2 磁盘缓存用）。
+void mkdirs(const std::string& path) {
+    std::string cur;
+    for (size_t i = 0; i < path.size(); ++i) {
+        cur.push_back(path[i]);
+        if (path[i] == '/') {
+            if (cur.size() > 1) {
+                ::mkdir(cur.c_str(), 0755);
+            }
+        }
+    }
+    ::mkdir(path.c_str(), 0755);
+}
 
 // ---------------------------------------------------------------------------
 // 合成高度源（与 host 单测同一语义：fn 在每瓦像素格点求值）
@@ -292,14 +307,34 @@ void TerrainScene::initializeGl() {
         ALOG("layer stack: %s", order.c_str());
     }
 
-    // S2：持久瓦片字节缓存（跨相机重建；网络下载去重，重建只补新瓦）。
+    // S2/S2三刀：字节缓存三层链 = 内存 → 磁盘 → 网络（跨相机重建去重 + 跨进程冷启）。
     rawBytesSource_ = std::make_unique<NasaHttpBytesSource>();
-    ringBytesCache_ =
-        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
-    amapBytesCache_ =
-        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
-    labelBytesCache_ =
-        std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+    if (!navCacheRoot_.empty()) {
+        mkdirs(navCacheRoot_ + "/ring");
+        mkdirs(navCacheRoot_ + "/amap");
+        mkdirs(navCacheRoot_ + "/label");
+        ringDiskCache_ = std::make_unique<DiskTileCacheBytesSource>(
+            *rawBytesSource_, navCacheRoot_ + "/ring");
+        amapDiskCache_ = std::make_unique<DiskTileCacheBytesSource>(
+            *rawBytesSource_, navCacheRoot_ + "/amap");
+        labelDiskCache_ = std::make_unique<DiskTileCacheBytesSource>(
+            *rawBytesSource_, navCacheRoot_ + "/label");
+        ringBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*ringDiskCache_, 512u);
+        amapBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*amapDiskCache_, 512u);
+        labelBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*labelDiskCache_, 512u);
+        ALOG("S2 disk cache root=%s", navCacheRoot_.c_str());
+    } else {
+        // 无目录（未接 Java filesDir）：退回纯内存缓存（与 disk 前行为一致）。
+        ringBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+        amapBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+        labelBytesCache_ =
+            std::make_unique<TileCacheBytesSource>(*rawBytesSource_, 512u);
+    }
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
     device_ = std::make_unique<Gles3RenderDevice>();
@@ -508,6 +543,8 @@ void TerrainScene::setCamera(double lonDeg, double latDeg, double altMeters,
 }
 
 void TerrainScene::setAssetManager(AAssetManager* manager) { assetManager_ = manager; }
+
+void TerrainScene::setNavCacheRoot(const std::string& root) { navCacheRoot_ = root; }
 
 // ---------------------------------------------------------------------------
 // L3 相机导航（debug.mapc.nav=1）：Java 只送屏幕手势增量，每 GL 帧 drain 给
@@ -994,6 +1031,19 @@ void TerrainScene::ensureGeometry() {
             }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
+            if (ringDiskCache_) {
+                ALOG("S2 disk ring(hit=%llu write=%llu pass=%llu) amap(hit=%llu write=%llu "
+                     "pass=%llu) label(hit=%llu write=%llu pass=%llu)",
+                     static_cast<unsigned long long>(ringDiskCache_->diskHitCount()),
+                     static_cast<unsigned long long>(ringDiskCache_->diskWriteCount()),
+                     static_cast<unsigned long long>(ringDiskCache_->passthroughCount()),
+                     static_cast<unsigned long long>(amapDiskCache_->diskHitCount()),
+                     static_cast<unsigned long long>(amapDiskCache_->diskWriteCount()),
+                     static_cast<unsigned long long>(amapDiskCache_->passthroughCount()),
+                     static_cast<unsigned long long>(labelDiskCache_->diskHitCount()),
+                     static_cast<unsigned long long>(labelDiskCache_->diskWriteCount()),
+                     static_cast<unsigned long long>(labelDiskCache_->passthroughCount()));
+            }
             ALOG("S2 cache ring(hit=%llu miss=%llu n=%zu) amap(hit=%llu miss=%llu n=%zu) "
                  "label(hit=%llu miss=%llu n=%zu)",
                  static_cast<unsigned long long>(ringBytesCache_->hitCount()),

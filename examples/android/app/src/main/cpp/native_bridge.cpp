@@ -65,6 +65,19 @@ Java_com_mapcplus_terrain_NativeRenderer_nativeSetAssetManager(JNIEnv* env, jcla
     gScene.setAssetManager(AAssetManager_fromJava(env, assetManager));
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeSetFilesDir(JNIEnv* env, jclass, jstring dir) {
+    if (dir == nullptr) {
+        return;
+    }
+    const char* chars = env->GetStringUTFChars(dir, nullptr);
+    if (chars == nullptr) {
+        return;
+    }
+    gScene.setNavCacheRoot(chars);
+    env->ReleaseStringUTFChars(dir, chars);
+}
+
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_mapcplus_terrain_NativeRenderer_nativeNavEnabled(JNIEnv*, jclass) {
     return gScene.navEnabled() ? JNI_TRUE : JNI_FALSE;

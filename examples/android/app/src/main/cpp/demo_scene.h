@@ -13,6 +13,7 @@
 #include <earth_engine/core/math/Vec3.h>
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/interaction/PointerGestureRecognizer.h>
+#include <earth_engine/providers/DiskTileCacheBytesSource.h>
 #include <earth_engine/providers/TileCacheBytesSource.h>
 #include <earth_engine/renderer/IRenderDevice.h>
 #include <earth_engine/scene/LayerStack.h>
@@ -43,6 +44,8 @@ public:
     /// L3 导航：原始触摸流转发（Java MotionEvent → 引擎手势识别器，GL 帧消费）。
     /// action: 0=Down 1=Move 2=PointerDown 3=PointerUp 4=Up 5=Cancel；pIdx 为事件目标指。
     void navTouchEvent(int action, int pointerIndex, const float* xs, const float* ys, int n);
+    /// S2 三刀：瓦片磁盘缓存根目录（Java filesDir/tilecache；≤0/空 = 不启用磁盘层）。
+    void setNavCacheRoot(const std::string& root);
     bool navEnabled() const { return navEnabled_; }
 
 private:
@@ -89,12 +92,17 @@ private:
     // S3：引擎图层栈（图层开关的事实源；绘制序 dem→imagery→label→debug）。
     earth_engine::scene::LayerStack layerStack_;
 
-    // S2：跨相机重建的持久瓦片字节缓存（网络下载去重；重建只补新瓦）。
-    // 声明顺序 = 析构逆序：raw 最后销毁（缓存持其引用）。
+    // S2/S2三刀：字节缓存三层链 = 内存(TileCacheBytesSource) → 磁盘(DiskTileCacheBytesSource)
+    // → 网络(NasaHttpBytesSource)。成员声明序 = 构造序；析构逆序，故 raw 必须最先声明
+    // （最后析构），disk 次之，mem 最后声明最先析构——引用链生命周期安全。
+    std::unique_ptr<NasaHttpBytesSource> rawBytesSource_;
+    std::unique_ptr<earth_engine::DiskTileCacheBytesSource> ringDiskCache_;
+    std::unique_ptr<earth_engine::DiskTileCacheBytesSource> amapDiskCache_;
+    std::unique_ptr<earth_engine::DiskTileCacheBytesSource> labelDiskCache_;
     std::unique_ptr<earth_engine::TileCacheBytesSource> ringBytesCache_;
     std::unique_ptr<earth_engine::TileCacheBytesSource> amapBytesCache_;
     std::unique_ptr<earth_engine::TileCacheBytesSource> labelBytesCache_;
-    std::unique_ptr<NasaHttpBytesSource> rawBytesSource_;
+    std::string navCacheRoot_; // <files>/tilecache（Java 传入）
 
     // S2 二刀：逐瓦 GL 纹理句柄持久映射（重建复用；避免每重建解码+新建+泄漏）。
     uint32_t textureForKey(std::map<earth_engine::TileKey, uint32_t>& map,

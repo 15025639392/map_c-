@@ -42,7 +42,9 @@ baked 逐像素一致（disp1_station2.png vs baked0_station2.png：Δpx 75/2592
 UV/纹理账，截图 tex_overlay_Mmid.png）——影像同屏/GPU 高度纹理通道就绪；观感判据可测化打通 |
 | **S2** | **资源-调度-流水线** | 无并发加载/解码 worker、优先级队列、去重、磁盘/内存缓存、按瓦预算、**帧收敛申报**、换代状态机、失效取消。后果：M-coarse 首帧 323 瓦 ≈40s | 七段流水线判据（T-E1~T-E5、T-E4 帧收敛纪律、T-P7/T-P8） | 已有 ITerrainDataSource / ITileBytesSource / TerrainFrameCache / AncestorFallbackDataSource / 装饰器组合。**L1 已落**：TileCacheBytesSource + DiskTileCacheBytesSource（内存+磁盘缓存）。**S2 第一刀已落（demo 接线）**：瓦片字节缓存上提为**跨相机重建持久成员**（ring/amap/label 三路×512 共享底层字节源；NASA 重建只补新瓦）——设备证据：R1 miss 42 → R2 miss 70(hit2) → R3 miss 72(hit20/20)，网络请求/重建从全量降为个位数；guard 查高瓦同走持久 ring 缓存；像素基线 Δpx=0。**S2 二刀已落（demo 接线）**：逐瓦 GL 纹理句柄持久映射（img/lbl/hgt，TileKey→handle：命中免
   解码/新建、新瓦才解码上传、FIFO 上限淘汰释放；修复每重建句柄泄漏）——设备证据 R1 new42 →
-  R2 hit2 new23（重建只补新瓦），像素基线 Δpx=0，重建 ~0.1s 级。剩余：并发 worker/优先级/预算/帧收敛申报 |
+  R2 hit2 new23（重建只补新瓦），像素基线 Δpx=0，重建 ~0.1s 级。**S2 三刀已落（demo 接线）**：磁盘瓦片缓存层（DiskTileCacheBytesSource；Java filesDir/tilecache →
+  ring/amap/label 子目录；链 = 内存→磁盘→网络）——设备证据：冷启 ring write=42（全量网络 ~8s）；
+  warm 重启 ring hit=42 write=0 pass=0（零网络，~3s 总出帧）。剩余：并发 worker/优先级/预算/帧收敛申报 |
 | **S3** | **场景/图层系统** | 无图层栈（顺序/透明度/生命周期/样式开关/内容路由）；现在是"固定 demo 场景"，接不了第二图层 | 影像/矢量/标注都挂在图层栈上 | **L3 已落（地基）**：`scene/LayerStack`（host：顺序/开关/透明度/生命周期/差分账，5 用例；59/59）——demo 图层开关已以栈为事实源（dem→imagery→label→debug，nav0 像素不变 Δpx=0）。剩余：宿主渲染句柄挂栈（矢量/影像层内容路由化） |
 | **S4** | **影像系统** | 无影像 provider（XYZ/WMTS/…）、无纹理上传预算 | ★★ 影像（阶段 3/4） | 复用 ITileBytesSource + URL 模板。**L1/L2 已落**：退化决议 + ImageryTileSource（装配链，host）+ PngToRgba8 + **真实影像源已接：高德卫星**（JPEG 256 XYZ：webst01.is.autonavi.com/appmaptile?style=6）——
 解码器放开 PNG-only 支持 JPEG；demo 每瓦高德卫星纹理（mercator uv 北=顶）+ shader 双模式

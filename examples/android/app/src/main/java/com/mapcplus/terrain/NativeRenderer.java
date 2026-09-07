@@ -59,6 +59,7 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     private static native void nativeSetCamera(double lonDeg, double latDeg, double altMeters,
                                                double pitchDeg, double headingDeg);
     private static native void nativeSetAssetManager(android.content.res.AssetManager am);
+    private static native void nativeSetFilesDir(String dir);
     private static native boolean nativeNavEnabled();
     private static native void nativeNavGesture(double dxPx, double dyPx, double pinchScale);
     private static native void nativeNavPan(double dxPx, double dyPx);
@@ -79,6 +80,11 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     /** 手势增量：dx/dy = 屏幕像素（y 向下为正），pinchScale = 本帧双指距离比（>1 拉近）。 */
     public static void navGesture(double dxPx, double dyPx, double pinchScale) {
         nativeNavGesture(dxPx, dyPx, pinchScale);
+    }
+
+    /** S2 三刀：瓦片磁盘缓存根目录（filesDir/tilecache）。 */
+    public static void setFilesDir(String dir) {
+        nativeSetFilesDir(dir);
     }
 
     /** 双指平移增量（质心像素；native 与旋转/缩放同帧组合）。 */
