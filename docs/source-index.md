@@ -41,6 +41,7 @@
 | HeightmapTile（mercator 米查高，像素↔地理；min/max 排除哨兵） | content/HeightmapTile.{h,cpp} |
 | TerrainMeshData / TerrainTileMeshBuilder | content/TerrainTileMesh.{h,cpp} |
 | ITerrainDataSource / TerrainGrid（heights + noDataValues + borderInset） | content/TerrainDataSource.h |
+| AncestorFallbackDataSource（缺瓦祖先回退 + 重采样，调度-lite） | content/AncestorFallbackDataSource.{h,cpp} |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
 | auditSameLevelSharedEdges / SeamAuditResult（同级共享边审计） | content/SeamAudit.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |
@@ -68,8 +69,9 @@
 `geodesy/`：cartographic、ellipsoid、projection、quadtree_geometric_error、ray_ellipsoid、transforms；
 `tiling/`：tile_key、tile_scheme、terrain_lod_selector；
 `content/`：heightmap_codec、heightmap_sampler、heightmap_tile、terrain_tile_mesh、
-terrain_frame_assembler、seam_audit、ring_source_seam（B2 环源闭合）、
-terrain_cross_level、terrain_picking、terrain_frame_cache、
-decode_nodata_semantics（gis-md 哨兵语义对拍）、fixed_station_baseline；
+terrain_frame_assembler、ancestor_fallback（祖先回退/调度-lite）、seam_audit、
+ring_source_seam（B2 环源闭合）、terrain_cross_level、terrain_picking、
+terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
+fixed_station_baseline；
 `camera/`：camera_view、frustum、terrain_camera_pipeline；
 `providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source。

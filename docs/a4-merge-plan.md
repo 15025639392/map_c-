@@ -126,3 +126,14 @@
 - 接线余项（需数据/设备侧决策）：内置 assets 本身无环 → 要么解码侧读邻瓦边界
   回填环（AAssetManager 4 邻瓦 1px strip），要么换带环真实源（如 AWS Mapzen
   含环瓦片，须验证其 256 变体环宽）；模拟器出帧验证。判据观感仍待用户。
+
+### B5 前身入账（2026-09-09，祖先回退装饰器）
+
+- 新件 `content/AncestorFallbackDataSource`：包装任一 ITerrainDataSource，缺瓦沿
+  父链上溯（默认 4 层）取最近祖先栅格**重采样到请求瓦栅格**（父数据、子几何占位，
+  下游装配/网格无感知）；任意层无数据 → nullopt（不冒充）。
+- 填补 roadmap/装配层反复标注的「缺失瓦跳过（祖先回退属调度阶段）」缺口（host 半）；
+  与 gis-md 换代过渡机制族（GltfTerrainUpsampler 等）语义对齐，跨级 T 顶点 remap 仍在 B4。
+- 测试 `tests/unit/content/test_ancestor_fallback`：直连透传逐位一致 / 子层整层缺失
+  回退重采样 ≈ 世界函数 / 深度上限生效 / 全缺 nullopt / 装配端到端无空洞对照。
+  host 38/38、android-arm64 core 编译过。
