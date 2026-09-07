@@ -128,6 +128,8 @@ set(MAP_IMAGERY_SOURCES
 # renderer：渲染抽象（S1/L2 第一步）——设备接口层，host 先行，无图形头。
 set(MAP_RENDERER_SOURCES
     renderer/IRenderDevice.h
+    renderer/HeightTextureCodec.h
+    renderer/HeightTextureCodec.cpp
 )
 
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
