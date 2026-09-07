@@ -105,7 +105,7 @@ if(MAP_CURL_LIBRARY)
 endif()
 
 # stb/glm/curl 等第三方头（GIS_MD_VCPKG_INSTALLED/include，只读复用）。
-target_include_directories(earth_engine_core PRIVATE ${MAP_THIRDPARTY_INCLUDE_DIR})
+target_include_directories(earth_engine_core SYSTEM PRIVATE ${MAP_THIRDPARTY_INCLUDE_DIR})
 
 target_sources(earth_engine_core PRIVATE
     ${MAP_CORE_MATH_SOURCES}

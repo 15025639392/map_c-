@@ -11,7 +11,6 @@ using namespace earth_engine;
 namespace {
 
 constexpr double kMeterEps = 1.0e-6;
-constexpr double kRelEps = 1.0e-10;
 
 double kA() { return Ellipsoid::WGS84().maximumRadius(); }
 

@@ -12,7 +12,6 @@ using namespace earth_engine;
 
 namespace {
 
-constexpr double kMeterEps = 1.0e-6;
 
 /// 按"每个像素格点处的地理位置"求值生成高度网格（与 tile 的像素↔地理映射一致）。
 /// 同一全局函数 f 喂给两块相邻瓦 → 共享边的格点必然同值。
