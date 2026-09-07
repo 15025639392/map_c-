@@ -25,6 +25,9 @@ if(NOT MAP_THIRDPARTY_INCLUDE_DIR)
         "缺少第三方依赖头目录：请先 source env.sh（GIS_MD_VCPKG_INSTALLED）")
 endif()
 
+# libcurl（HTTP 字节源；系统 SDK / vcpkg 均可）。
+find_library(MAP_CURL_LIBRARY NAMES curl)
+
 # ---------------------------------------------------------------------------
 # 核心库：src/earth_engine —— 命名空间 earth_engine，与 gis-md scaffold 布局
 # 同构（core/math、core/geodesy、…），便于阶段 6 并入 gis-md 现成地形服务。

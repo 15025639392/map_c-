@@ -90,6 +90,15 @@ set(MAP_PROVIDERS_SOURCES
     providers/TerrainRgbPngTileSource.cpp
 )
 
+# curl HTTP 字节源：仅当系统/环境中找到 libcurl。
+if(MAP_CURL_LIBRARY)
+    list(APPEND MAP_PROVIDERS_SOURCES
+        providers/CurlBytesSource.h
+        providers/CurlBytesSource.cpp
+    )
+    target_link_libraries(earth_engine_core PRIVATE ${MAP_CURL_LIBRARY})
+endif()
+
 # stb/glm/curl 等第三方头（GIS_MD_VCPKG_INSTALLED/include，只读复用）。
 target_include_directories(earth_engine_core PRIVATE ${MAP_THIRDPARTY_INCLUDE_DIR})
 

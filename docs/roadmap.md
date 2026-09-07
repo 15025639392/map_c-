@@ -202,6 +202,16 @@
   同级/跨级共享网格点、T-P11 行序、T-P13 min/max 等）↔ 测试套件；判据表状态未动
   （❌→✅ 仍需整链/观感自证，诚实口径）。当前 29 套件全绿。
 
+### HTTP 字节源（2026-09-08，网络 Provider 闭环）
+
+- `providers/CurlBytesSource.{h,cpp}`——libcurl 瓦片字节源（系统 SDK libcurl；
+  CMake find_library，未找到则跳过编译）。follow-redirect、超时、非 200/空体 → nullopt。
+- 单测 +1 套件（test_http_bytes_source）：测试内起 `python3 -m http.server`（回环 +
+  RAII 关停 + 就绪轮询）服务 Terrain-RGB RGB fixture → curl 拉取 → 解码逐点对照
+  fn ±0.06m（**真实 HTTP 全链路**）；404 → nullopt。30 套件全绿。
+  无 libcurl 环境自动 GTEST_SKIP。
+- 至此 Provider 栈闭环：URL 模板 → **HTTP** → PNG → Terrain-RGB → 每瓦栅格。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：

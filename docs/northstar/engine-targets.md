@@ -48,13 +48,13 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 ## 4. 当前状态（2026-09-08）
 
-- 仓库骨架、构建（host native, cmake+ninja+googletest + gis-md vcpkg stb 头）、
-  29 个 gtest 套件全绿（含 M-mid 型固定机位 host 基线）。
+- 仓库骨架、构建（host native, cmake+ninja+googletest + gis-md vcpkg stb 头 + 系统 libcurl）、
+  30 个 gtest 套件全绿（含 M-mid 型固定机位 host 基线 + HTTP 回环全链路）。
 - 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/RayTriangle/Rectangle；Ellipsoid（WGS84 双向转换、
   法线、地表投影）；Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；
   Geographic/WebMercator 投影；瓦片键/四叉树 + WebMercatorTileScheme + SSE；
   高度图编解码 + 规则网格采样 + HeightmapTile + TerrainTileMesh + TerrainLodSelector +
   TerrainDataSource/TerrainFrameAssembler（host 地形帧主链路）；CameraView + TerrainPicking +
   TerrainCameraPipeline + 跨层级共享网格点一致测试 + 固定机位基线；providers：URL 模板 +
-  字节源 + Terrain-RGB/RGB + **PNG 全链路**；terrain.md「host 机制证据」节已立。
-- 未开始：curl HTTP 网络源、渲染抽象；地形判据仍全部 ❌（见 terrain.md 跟踪表）。
+  字节源 + **CurlBytesSource（HTTP）** + PNG 全链路；terrain.md「host 机制证据」节已立。
+- 未开始：渲染抽象（GPU/平台）；地形判据仍全部 ❌（见 terrain.md 跟踪表）。

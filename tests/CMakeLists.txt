@@ -22,4 +22,8 @@ foreach(src ${MAP_TEST_SOURCES})
     add_executable(${test_name} ${src})
     target_link_libraries(${test_name} PRIVATE earth_engine_core GTest::gtest_main)
     add_test(NAME ${test_name} COMMAND ${test_name})
+    # HTTP 测试需要 libcurl 与本地回环服务（ctest 串行跑，回环端口冲突风险低）。
+    if(MAP_CURL_LIBRARY AND test_name STREQUAL "test_http_bytes_source")
+        target_compile_definitions(${test_name} PRIVATE MAP_HTTP_AVAILABLE=1)
+    endif()
 endforeach()
