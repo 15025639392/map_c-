@@ -1,6 +1,10 @@
 package com.mapcplus.terrain;
 
 import android.opengl.GLSurfaceView;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
@@ -13,6 +17,40 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     /** 由 MainActivity 传入 APK assets（DEM 资产源用）。 */
     public static void setAssetManager(android.content.res.AssetManager am) {
         nativeSetAssetManager(am);
+    }
+
+    /**
+     * 同步 HTTP(S) GET（native 网络 DEM 源用；由 native GL 线程调用，非主线程）。
+     * 非 200 / IO 异常 → null。连接与读超时各 10s。
+     */
+    public static byte[] httpGetBytes(String url) {
+        HttpURLConnection conn = null;
+        try {
+            conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(10000);
+            conn.setRequestProperty("Accept", "image/png,*/*");
+            conn.setUseCaches(false);
+            final int code = conn.getResponseCode();
+            if (code != 200) {
+                return null;
+            }
+            try (InputStream in = conn.getInputStream();
+                 ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+                final byte[] buf = new byte[16384];
+                int n;
+                while ((n = in.read(buf)) > 0) {
+                    out.write(buf, 0, n);
+                }
+                return out.toByteArray();
+            }
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
+        }
     }
 
     private static native void nativeSurfaceCreated();

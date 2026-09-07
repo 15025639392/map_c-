@@ -71,7 +71,14 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -n com.mapcplus.terrain/.MainActivity
 ```
 
-- 数据：app 内置真实 terrarium DEM（`app/src/main/assets/dem`，重庆缙云山 z10–13）；有资产即真地形渲染。
+- 数据源（`debug.mapc.src`，重启生效）：
+  - **`nasa`（默认，2026-09-09 切到用户指定网络源）**：`https://mapoverlay.xinzhi.space/
+    3dterrain/nasa/tiles/{z}/{x}/{y}.png` —— Mapbox Terrain-RGB **514×514（512 cell +
+    1px 裙边回填环）**，覆盖 z6–12；native 经 JNI → Java HttpURLConnection（系统 TLS）
+    拉取 → 引擎环模式解码。真机实测：M-near(z12) 2 瓦、M-mid(z12) 42 瓦出帧，
+    截图 `docs/assets/nasa_station{1,2}_*.png`（distinct 350/877）。
+  - `asset`：app 内置真实 terrarium DEM（`app/src/main/assets/dem`，缙云山 z10–13）
+    离线兜底（`adb shell setprop debug.mapc.src asset`）。
 - 机位：`adb shell setprop debug.mapc.station 1..5`（M-near/M-mid/M-graze/M-high/M-coarse）后重启 app。
 - 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
 - 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。

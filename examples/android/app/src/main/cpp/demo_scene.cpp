@@ -390,12 +390,14 @@ void TerrainScene::ensureGeometry() {
 
     std::vector<DemFrame> frames; // key + mesh 的统一帧集合
     if (useDem_) {
-        if (assetManager_ == nullptr) {
-            ALOGE("dem enabled but no asset manager");
+        // 数据源：debug.mapc.src —— ''|'nasa'（默认，用户指定 NASA 网络源）| 'asset'。
+        char srcProp[PROP_VALUE_MAX] = {0};
+        const bool nasa = (__system_property_get("debug.mapc.src", srcProp) <= 0) ||
+                          (srcProp[0] != 'a'); // 未设或非 asset → nasa
+        if (assetManager_ == nullptr && !nasa) {
+            ALOGE("dem asset source needs asset manager");
             return;
         }
-        DemAssetSource demSource(assetManager_);
-        const int level = bandLevelForAltitudeMeters(camAltMeters_);
         Rectangle bandRect;
         if (footOpt) {
             bandRect = footOpt.value();
@@ -404,10 +406,32 @@ void TerrainScene::ensureGeometry() {
             bandRect = Rectangle::fromDegrees(camLonDeg_ - 0.35, camLatDeg_ - 0.25,
                                               camLonDeg_ + 0.35, camLatDeg_ + 0.25);
         }
-        const int demNodes = (level >= 13) ? 65 : 33; // 近景(L13)网格加密
-        frames = buildDemFrames(scheme, demSource, bandRect, e, level, demNodes);
-        ALOG("dem band level=%d tiles=%zu foot=%d", level, frames.size(),
-             footOpt.has_value() ? 1 : 0);
+        if (nasa) {
+            // NASA Terrain-RGB 514 带环源（z6–12；近景受源上限 z12 约束）。
+            NasaRingDemSource demSource; // 字节源 + 引擎环模式源（组合体）
+            int level = bandLevelForAltitudeMeters(camAltMeters_);
+            if (level > 12) {
+                level = 12;
+            }
+            if (level < 6) {
+                level = 6;
+            }
+            const int demNodes = (level >= 12) ? 65 : 33;
+            frames = buildDemFrames(scheme, demSource.source, bandRect, e, level, demNodes,
+                                    /*requestCells=*/512);
+            ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
+                 footOpt.has_value() ? 1 : 0);
+            if (frames.empty() && assetManager_ != nullptr) {
+                ALOGE("nasa tiles empty (net?) — 离线回退: adb shell setprop debug.mapc.src asset");
+            }
+        } else {
+            DemAssetSource demSource(assetManager_);
+            const int level = bandLevelForAltitudeMeters(camAltMeters_);
+            const int demNodes = (level >= 13) ? 65 : 33; // 近景(L13)网格加密
+            frames = buildDemFrames(scheme, demSource, bandRect, e, level, demNodes, 256);
+            ALOG("dem asset band level=%d tiles=%zu foot=%d", level, frames.size(),
+                 footOpt.has_value() ? 1 : 0);
+        }
     } else {
         const FunctionalTerrainSource source;
         TerrainLodResult selection;

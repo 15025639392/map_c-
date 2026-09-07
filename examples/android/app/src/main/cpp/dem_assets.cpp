@@ -3,6 +3,8 @@
 #include <android/log.h>
 #include <cmath>
 
+#include "net_fetch.h"
+
 #include <earth_engine/content/HeightmapCodec.h>
 #include <earth_engine/content/HeightmapTile.h>
 #include <earth_engine/providers/StbPngDecoder.h>
@@ -63,6 +65,12 @@ std::optional<TerrainGrid> DemAssetSource::requestHeights(
     return grid;
 }
 
+// NASA 网络字节源（native → Java HttpURLConnection）。
+std::optional<std::vector<uint8_t>> NasaHttpBytesSource::requestTileBytes(
+    const TileKey&, const std::string& url) const {
+    return httpGetBytes(url);
+}
+
 int bandLevelForAltitudeMeters(double altitudeMeters) {
     if (altitudeMeters >= 50000.0) {
         return 10;
@@ -111,15 +119,21 @@ std::vector<TileKey> bandKeysForRectangle(const WebMercatorTileScheme& scheme,
 std::vector<DemFrame> buildDemFrames(const WebMercatorTileScheme& scheme,
                                      const ITerrainDataSource& source,
                                      const Rectangle& footprintRadians,
-                                     const Ellipsoid& ellipsoid, int level, int nodesPerEdge) {
+                                     const Ellipsoid& ellipsoid, int level, int nodesPerEdge,
+                                     int requestCells) {
     std::vector<DemFrame> frames;
     const TerrainTileMeshBuilder builder;
     for (const TileKey& key : bandKeysForRectangle(scheme, footprintRadians, level)) {
-        const std::optional<TerrainGrid> grid = source.requestHeights(scheme, key, 256);
+        const std::optional<TerrainGrid> grid = source.requestHeights(scheme, key, requestCells);
         if (!grid || grid->empty()) {
             continue;
         }
-        const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height);
+        // 透传环栅格语义（borderInset/noData）：网格采样按内缩映射读环内邻瓦回填
+        // → 相邻瓦共享边一致（与 host test_nasa_ring_source 同一机制）。
+        const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height,
+                                 grid->noDataValues.data(),
+                                 static_cast<int>(grid->noDataValues.size()),
+                                 grid->borderInset);
         DemFrame frame;
         frame.key = key;
         frame.mesh = builder.build(tile, ellipsoid, nodesPerEdge);
