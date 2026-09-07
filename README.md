@@ -47,8 +47,10 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**52 个 gtest 套件全绿零告警**（2026-09-09：地形链路 44 + L1/L2 系列：缓存/影像退化链/相机
-运动族/渲染抽象与纹理管线/PngToRgba8 影像瓦→纹理数据腿）。
+**52 个 gtest 套件全绿零告警**（2026-09-09 复核：`build/native-tests` 从零重建 52/52、
+全新 clone（HEAD `f2938e9`）52/52、android-arm64 core 从零重建通过、零告警）。
+地形链路 44 + L1/L2 系列：缓存×2/影像退化链/相机运动族/渲染抽象（IRenderDevice 纹理+UV
+设备验证）/PngToRgba8 影像瓦→纹理数据腿。
 host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
 拾取，外加帧缓存增量、同级/跨级共享边审计（`SeamAudit`）、**带重叠环源采样（borderInset, B2）**
