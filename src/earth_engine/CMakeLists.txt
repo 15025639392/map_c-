@@ -148,6 +148,12 @@ set(MAP_SCENE_SOURCES
     scene/LayerStack.cpp
 )
 
+# vector：矢量数据腿/贴地/样式（S5 最小切片，host 先行）。
+set(MAP_VECTOR_SOURCES
+    vector/VectorGrounding.h
+    vector/VectorGrounding.cpp
+)
+
 # curl HTTP 字节源：仅当系统/环境中找到 libcurl。
 if(MAP_CURL_LIBRARY)
     list(APPEND MAP_PROVIDERS_SOURCES
@@ -171,4 +177,5 @@ target_sources(earth_engine_core PRIVATE
     ${MAP_RENDERER_SOURCES}
     ${MAP_INTERACTION_SOURCES}
     ${MAP_SCENE_SOURCES}
+    ${MAP_VECTOR_SOURCES}
 )

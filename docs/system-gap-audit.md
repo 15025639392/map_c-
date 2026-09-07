@@ -46,7 +46,7 @@ UV/纹理账，截图 tex_overlay_Mmid.png）——影像同屏/GPU 高度纹理
 解码器放开 PNG-only 支持 JPEG；demo 每瓦高德卫星纹理（mercator uv 北=顶）+ shader 双模式
 （影像 albedo/高度着色）；M-mid 42/42 瓦出图 distinct 16195（截图 amap_satellite_Mmid.png）；
 S4→渲染全链真实内容出图打通；观感/朝向归用户 |
-| **S5** | **矢量与标注** | 零行：矢量瓦解码（MVT…）、样式/换肤、贴地不浮、字体图集标注、线宽/字号屏幕恒定 | ★ 矢量（阶段 5） | 拾取/查询走 TerrainPicking 扩展；高度贴地依赖现有查高服务 |
+| **S5** | **矢量与标注** | 矢量瓦解码（MVT…）、样式/换肤、贴地不浮、字体图集标注、线宽/字号屏幕恒定 | ★ 矢量（阶段 5） | **L3 已落（最小切片，host）**：`vector/VectorGrounding`（GeoJSON 点子集解码 + 贴地投影（地表椭球高+浮空 offset → ECEF；无数据不落点）+ 样式键映射；5 用例；60/60）——demo 上屏/标图与 MVT 解码属阶段 5 |
 | **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有。**L1 已落**：CameraMotion + TerrainGroundGuard + CameraNavController（运动/不穿地/联动控制器）。**L3 slice A 已落**：引擎层相机制 **MapCameraSystem**（`camera/MapCameraSystem.{h,cpp}`，turret 语义：正下中心经纬+高度+heading/pitch；手势增量→GestureToMotion 速率→CameraMotion 惯性/阻尼→TerrainGroundGuard 不穿地→flyTo 目标先贴地抬升；host 用例 14/14，57/57）——demo 手势层接线：nav=1 时 Java 只送屏幕增量、每 GL 帧引擎步进并回灌位姿（`debug.mapc.nav`/`debug.mapc.flyto`/`debug.mapc.panprobe`），nav=0 直连基线**像素级不变**（nav0_station2 vs baked0_station2 Δpx=0）。**L3 slice B 已落**：中心平移轴（pan）——双指质心增量经 ENU 地面投影→米/秒（与旋转/缩放同阻尼/收敛/上限、同帧组合），中心经纬球面小步积分，贴地防护随中心走（移入高地抬升到净空之上）；demo 双指拖动=平移（捏合缩放保留、单指仍旋转/俯仰）；设备证据 logcat pose lon 106.440→106.404（~4km 西移）+ 截图 nav1_pan_*.png（Δpx≈44.6%）。
   **L3 slice C 已落**：LOD 感知灵敏度包络（视距≤3000m 降速至 0.35×、≥8000m 全速，线性过渡；旋转/缩放/
   平移同乘；可配参）host 用例×2（16/16）——station2 15km 观感不变、station1 3km 生效，观感交用户。
