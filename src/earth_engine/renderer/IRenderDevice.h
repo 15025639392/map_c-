@@ -7,15 +7,18 @@
 namespace earth_engine::render {
 
 /// CPU 侧三角形网格上传描述：位置/法线（ECEF，三轴 float 数组，长度相同）+
+/// 可选逐顶点高度通道（数量 = 顶点数；空 = 无高度通道，实现按 0 处理）+
 /// 三角形索引（3 的倍数）。
 struct MeshUploadData {
     std::vector<float> positions;
     std::vector<float> normals;
+    std::vector<float> heights; // 可选：长度 == positions/3 或为空
     std::vector<uint32_t> indices;
 
     bool valid() const {
         return positions.size() % 3 == 0 && normals.size() == positions.size() &&
-               indices.size() % 3 == 0 && !indices.empty();
+               indices.size() % 3 == 0 && !indices.empty() &&
+               (heights.empty() || heights.size() == positions.size() / 3);
     }
 };
 
@@ -52,6 +55,8 @@ public:
     // -- uniform / 视口 / 清屏 --
     /// mat4 列主序 16 float（与引擎 Mat4 布局一致）。
     virtual void setUniformMat4(const char* name, const float* mat4x4) = 0;
+    /// mat3（列主序 9 float，法线旋转等）。
+    virtual void setUniformMat3(const char* name, const float* mat3x3) = 0;
     virtual void setUniformVec3(const char* name, float x, float y, float z) = 0;
     virtual void setViewport(int widthPx, int heightPx) = 0;
     virtual void clearColor(float r, float g, float b, float a) = 0;

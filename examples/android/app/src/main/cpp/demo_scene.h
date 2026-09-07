@@ -2,12 +2,15 @@
 
 #include <android/asset_manager.h>
 
+#include <memory>
+
 #include <earth_engine/core/math/Vec3.h>
+#include <earth_engine/renderer/IRenderDevice.h>
 
 namespace demoscene {
 
-/// A2/A3 场景：相机 → core 管线（选择/解码/网格）→ GLES 渲染。
-/// 相机初始 = station 预设（debug.mapc.station 1/2/3），Java 手势可改写。
+/// A2/A3 场景：相机 → core 管线（选择/解码/网格）→ IRenderDevice(GLES3) 渲染。
+/// 相机初始 = station 预设（debug.mapc.station 1..5），Java 手势可改写。
 class TerrainScene {
 public:
     void initializeGl();
@@ -21,12 +24,9 @@ private:
     void ensureGeometry();   // 相机→选择→装配，并把网格上传 GPU
     void destroyGlObjects();
 
-    unsigned int program_ = 0;
-    unsigned int vao_ = 0;
-    unsigned int vboPos_ = 0;
-    unsigned int vboNor_ = 0;
-    unsigned int vboHei_ = 0;
-    unsigned int ebo_ = 0;
+    std::unique_ptr<earth_engine::render::IRenderDevice> device_;
+    uint32_t programHandle_ = 0;
+    uint32_t meshHandle_ = 0;
     unsigned int indexCount_ = 0;
     bool geometryReady_ = false;
     int width_ = 1080;
@@ -47,7 +47,7 @@ private:
     double camPitchDeg_ = 45.0;    // 相对地平线向下角（0=掠视 90=正下）
     double camHeadingDeg_ = 200.0; // 0=北 顺时针
     bool cameraUserSet_ = false;
-    bool useDem_ = false; // debug.mapc.dem=1 → 资产 DEM（terrarium）
+    bool useDem_ = false; // debug.mapc.dem=1 → DEM（assets 或 NASA 网络源）
     AAssetManager* assetManager_ = nullptr;
     double lastKey_[5] = {0, 0, 0, 0, 0};
 };

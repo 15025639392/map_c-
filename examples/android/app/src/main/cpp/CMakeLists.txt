@@ -20,6 +20,6 @@ endif()
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../src/earth_engine
                  ${CMAKE_CURRENT_BINARY_DIR}/earth_engine_core)
 
-add_library(terrain_demo SHARED demo_scene.cpp native_bridge.cpp dem_assets.cpp)
+add_library(terrain_demo SHARED demo_scene.cpp native_bridge.cpp dem_assets.cpp gles3_device.cpp)
 target_compile_options(terrain_demo PRIVATE -Wall -Wextra -Wpedantic)
 target_link_libraries(terrain_demo PRIVATE earth_engine_core android log GLESv3)

@@ -1,6 +1,7 @@
 #include "demo_scene.h"
 
 #include "dem_assets.h"
+#include "gles3_device.h"
 
 #include <GLES3/gl3.h>
 
@@ -70,39 +71,6 @@ public:
 // ---------------------------------------------------------------------------
 // Shader 工具
 // ---------------------------------------------------------------------------
-unsigned int compileShader(GLenum type, const char* src, const char* tag) {
-    const unsigned int sh = glCreateShader(type);
-    glShaderSource(sh, 1, &src, nullptr);
-    glCompileShader(sh);
-    int ok = 0;
-    glGetShaderiv(sh, GL_COMPILE_STATUS, &ok);
-    if (!ok) {
-        char log[1024];
-        glGetShaderInfoLog(sh, sizeof(log), nullptr, log);
-        ALOGE("shader compile failed (%s): %s", tag, log);
-    }
-    return sh;
-}
-
-unsigned int buildProgram(const char* vsSrc, const char* fsSrc) {
-    const unsigned int vs = compileShader(GL_VERTEX_SHADER, vsSrc, "vert");
-    const unsigned int fs = compileShader(GL_FRAGMENT_SHADER, fsSrc, "frag");
-    const unsigned int prog = glCreateProgram();
-    glAttachShader(prog, vs);
-    glAttachShader(prog, fs);
-    glLinkProgram(prog);
-    int ok = 0;
-    glGetProgramiv(prog, GL_LINK_STATUS, &ok);
-    if (!ok) {
-        char log[1024];
-        glGetProgramInfoLog(prog, sizeof(log), nullptr, log);
-        ALOGE("program link failed: %s", log);
-    }
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    return prog;
-}
-
 // 相机位姿基（与 CameraView 相同的施密特正交化，这里直接算 Vec3）。
 struct Basis {
     Vec3 right;
@@ -189,13 +157,17 @@ const char* kFs =
 // TerrainScene
 // ---------------------------------------------------------------------------
 void TerrainScene::destroyGlObjects() {
-    if (program_) glDeleteProgram(program_);
-    if (vao_) glDeleteVertexArrays(1, &vao_);
-    if (vboPos_) glDeleteBuffers(1, &vboPos_);
-    if (vboNor_) glDeleteBuffers(1, &vboNor_);
-    if (vboHei_) glDeleteBuffers(1, &vboHei_);
-    if (ebo_) glDeleteBuffers(1, &ebo_);
-    program_ = vao_ = vboPos_ = vboNor_ = ebo_ = 0;
+    if (device_) {
+        if (programHandle_ != 0) {
+            device_->releaseProgram(programHandle_);
+        }
+        if (meshHandle_ != 0) {
+            device_->releaseMesh(meshHandle_);
+        }
+    }
+    programHandle_ = 0;
+    meshHandle_ = 0;
+    device_.reset();
     geometryReady_ = false;
 }
 
@@ -219,13 +191,15 @@ void TerrainScene::initializeGl() {
     ALOG("dem mode=%d (assetMgr=%d)", useDem_ ? 1 : 0, assetManager_ != nullptr ? 1 : 0);
     glDisable(GL_CULL_FACE);
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.42f, 0.55f, 0.74f, 1.0f); // 天蓝
-    program_ = buildProgram(kVs, kFs);
-    glGenVertexArrays(1, &vao_);
-    glGenBuffers(1, &vboPos_);
-    glGenBuffers(1, &vboNor_);
-    glGenBuffers(1, &vboHei_);
-    glGenBuffers(1, &ebo_);
+    device_ = std::make_unique<Gles3RenderDevice>();
+    device_->clearColor(0.42f, 0.55f, 0.74f, 1.0f); // 天蓝
+    render::ProgramSource src;
+    src.vertexShader = kVs;
+    src.fragmentShader = kFs;
+    programHandle_ = device_->createProgram(src);
+    if (programHandle_ == 0) {
+        ALOGE("createProgram failed");
+    }
 }
 
 void TerrainScene::resize(int widthPx, int heightPx) {
@@ -239,7 +213,7 @@ void TerrainScene::drawFrame() {
     if (!geometryReady_) {
         ensureGeometry();
     }
-    if (!geometryReady_ || program_ == 0 || indexCount_ == 0) {
+    if (!geometryReady_ || programHandle_ == 0 || meshHandle_ == 0) {
         if (frameCount_ % 120 == 1) {
             ALOG("draw frame=%ld (no geometry yet)", static_cast<long>(frameCount_));
         }
@@ -249,8 +223,8 @@ void TerrainScene::drawFrame() {
     const int side = std::min(width_, height_);
     glViewport((width_ - side) / 2, (height_ - side) / 2, side, side);
 
-    glUseProgram(program_);
-    glBindVertexArray(vao_);
+    device_->useProgram(programHandle_);
+    device_->clearColor(0.42f, 0.55f, 0.74f, 1.0f);
 
     // MVP：透视 × 视图（几何已 RTC 到相机位置）。
     const double fovY = earth_engine::degreesToRadians(60.0);
@@ -265,7 +239,7 @@ void TerrainScene::drawFrame() {
             m[c * 4 + r] = static_cast<float>(mvp.at(c, r));
         }
     }
-    glUniformMatrix4fv(glGetUniformLocation(program_, "uMvp"), 1, GL_FALSE, m);
+    device_->setUniformMat4("uMvp", m);
     // 视图旋转 3x3（列主序）。
     float vr[9];
     for (int c = 0; c < 3; ++c) {
@@ -273,18 +247,13 @@ void TerrainScene::drawFrame() {
             vr[c * 3 + r] = static_cast<float>(view.at(c, r));
         }
     }
-    glUniformMatrix3fv(glGetUniformLocation(program_, "uViewRot"), 1, GL_FALSE, vr);
-    glUniform3f(glGetUniformLocation(program_, "uLightDir"), 0.25f, 0.55f, 0.80f);
-    glUniform3f(glGetUniformLocation(program_, "uBaseColor"), 0.55f, 0.45f, 0.30f);
-    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indexCount_), GL_UNSIGNED_INT, nullptr);
+    device_->setUniformMat3("uViewRot", vr);
+    device_->setUniformVec3("uLightDir", 0.25f, 0.55f, 0.80f);
+    device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
+    device_->drawMesh(meshHandle_);
     if (frameCount_ == 1) {
         const GLenum err = glGetError();
-        const int umvp = glGetUniformLocation(program_, "uMvp");
-        const int uview = glGetUniformLocation(program_, "uViewRot");
-        const int ulight = glGetUniformLocation(program_, "uLightDir");
-        const int ucolor = glGetUniformLocation(program_, "uBaseColor");
-        ALOG("draw debug: glErr=0x%x uniform locs mvp=%d view=%d light=%d color=%d", err,
-             umvp, uview, ulight, ucolor);
+        ALOG("draw debug: glErr=0x%x (render via IRenderDevice)", err);
     }
 }
 
@@ -492,27 +461,18 @@ void TerrainScene::ensureGeometry() {
         return;
     }
 
-    glBindVertexArray(vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, vboPos_);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(pos.size() * sizeof(float)),
-                 pos.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glBindBuffer(GL_ARRAY_BUFFER, vboNor_);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(nor.size() * sizeof(float)),
-                 nor.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glBindBuffer(GL_ARRAY_BUFFER, vboHei_);
-    glBufferData(GL_ARRAY_BUFFER, static_cast<GLsizeiptr>(hei.size() * sizeof(float)),
-                 hei.data(), GL_STATIC_DRAW);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, static_cast<GLsizeiptr>(idx.size() * sizeof(uint32_t)),
-                 idx.data(), GL_STATIC_DRAW);
-    glBindVertexArray(0);
-
+    // 经 IRenderDevice 上传（GLES3 实现内部建 VAO/VBO/EBO）。
+    render::MeshUploadData md;
+    md.positions = std::move(pos);
+    md.normals = std::move(nor);
+    md.heights = std::move(hei);
+    md.indices = std::move(idx);
+    meshHandle_ = device_->uploadMesh(md);
+    if (meshHandle_ == 0) {
+        ALOGE("ensureGeometry: uploadMesh failed");
+        geometryReady_ = false;
+        return;
+    }
     geometryReady_ = true;
     ALOG("geometry ready: tiles=%ld vertices=%d triangles=%u", static_cast<long>(tilesDrawn_),
          totalVertices_, indexCount_ / 3);

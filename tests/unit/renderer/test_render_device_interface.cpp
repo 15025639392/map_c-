@@ -64,6 +64,13 @@ public:
             lastMat4_[i] = mat4x4[i];
         }
     }
+    void setUniformMat3(const char* name, const float* mat3x3) override {
+        ++uniformMat3Count_;
+        lastUniformMat3Name_ = name ? name : "";
+        for (int i = 0; i < 9; ++i) {
+            lastMat3_[i] = mat3x3[i];
+        }
+    }
     void setUniformVec3(const char* name, float x, float y, float z) override {
         ++uniformVec3Count_;
         lastUniformVec3Name_ = name ? name : "";
@@ -104,6 +111,7 @@ public:
     int useProgramCount_ = 0;
     int badUseProgram_ = 0;
     int uniformMat4Count_ = 0;
+    int uniformMat3Count_ = 0;
     int uniformVec3Count_ = 0;
     int viewportCount_ = 0;
     int clearCount_ = 0;
@@ -119,8 +127,10 @@ public:
     int lastViewportH_ = 0;
     float lastClear_[4] = {0, 0, 0, 0};
     float lastMat4_[16] = {0};
+    float lastMat3_[9] = {0};
     float lastVec3_[3] = {0, 0, 0};
     std::string lastUniformMat4Name_;
+    std::string lastUniformMat3Name_;
     std::string lastUniformVec3Name_;
 
 private:
@@ -187,6 +197,26 @@ TEST(RenderDevice, InvalidInputsRejectedWithNullHandles) {
     HostTraceRenderDevice dev;
     EXPECT_EQ(dev.uploadMesh(MeshUploadData()), 0u);
     EXPECT_EQ(dev.createProgram(ProgramSource()), 0u);
+}
+
+TEST(RenderDevice, OptionalHeightsAccepted) {
+    MeshUploadData m = makeMesh();
+    m.heights = {1.0f, 2.0f, 3.0f};
+    EXPECT_TRUE(m.valid());
+    HostTraceRenderDevice dev;
+    EXPECT_NE(dev.uploadMesh(m), 0u);
+    MeshUploadData bad = m;
+    bad.heights = {1.0f, 2.0f}; // 数量不匹配 → 无效
+    EXPECT_FALSE(bad.valid());
+}
+
+TEST(RenderDevice, UniformMat3Recorded) {
+    HostTraceRenderDevice dev;
+    const float m3[9] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
+    dev.setUniformMat3("uViewRot", m3);
+    EXPECT_EQ(dev.uniformMat3Count_, 1);
+    EXPECT_EQ(dev.lastUniformMat3Name_, "uViewRot");
+    EXPECT_EQ(dev.lastMat3_[8], 1.0f);
 }
 
 TEST(RenderDevice, UniformViewportClearRecorded) {
