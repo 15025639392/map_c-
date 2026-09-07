@@ -35,12 +35,18 @@ map_cplus/
 │   ├── roadmap.md                       # 分阶段计划（从 gis-md 路线图改编）
 │   └── northstar/                       # 北极星活文档（地形优先）
 └── src/earth_engine/                    # 核心库 earth_engine_core
-    └── core/                            # 阶段 1：math + geodesy
-└── tests/unit/{core,geodesy}/           # gtest，一文件一套件
+    ├── core/                            # math（Vec/Mat/Ray/Plane…）+ geodesy（椭球/投影/ENU/SSE…）
+    ├── tiling/                          # 瓦片键/四叉树/WebMercatorScheme/LOD 选择
+    ├── content/                         # 高度图编解码/查高/ECEF 网格/地形帧/缓存/拾取
+    ├── camera/                          # CameraView/视锥/地形帧管线
+    └── providers/                       # URL 模板/字节源/HTTP/PNG/Terrain-RGB
+└── tests/unit/                          # gtest：core/geodesy/tiling/content/camera/providers
 ```
 
 ## 当前状态（2026-09-08）
 
-阶段 0–1 ✅ + 阶段 2/3 前置 🔄：骨架 + 核心数学/坐标（Vec3/Vec2/Mat4/Ray/Rectangle/Ellipsoid/
-Cartographic/ENU 帧）+ 射线-椭球求交 + Geographic/WebMercator 投影，11 个 gtest 套件全绿。
-下一步：相机模型/拾取地基、瓦片键与四叉树、Provider 接口，逐步逼近阶段 6 地形。
+**32 个 gtest 套件全绿零告警**。host 地形主链路闭环：相机（脚印/射线/视锥）→
+LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
+拾取，外加帧缓存增量与固定机位基线。判据/能力映射见
+`docs/northstar/engine-targets.md` §5；地形判据状态逐条见 `docs/northstar/terrain.md`
+（全部 ❌——观感类需 GPU 平台/真机，机制类证据已登记）。
