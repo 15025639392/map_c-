@@ -5,9 +5,10 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 58/58 绿。地形链路 44 + L1/L2/L3：缓存×2/退化链/瓦源装配
+- Host：`./test_native.sh` → 60/60 绿。地形链路 44 + L1/L2/L3：缓存×2/退化链/瓦源装配
 （ImageryTileSource keepAlpha）/相机族 + **引擎相机制 MapCameraSystem（L3：惯性/贴地/flyTo/pan，
-14 用例）** + **手势识别器 PointerGestureRecognizer（7 用例）**/渲染抽象（纹理+UV+DrawList+图层
+16 用例）** + **手势识别器 PointerGestureRecognizer（7 用例）** + **图层栈 LayerStack（5 用例）** +
+**矢量最小切片 VectorGrounding（5 用例）**/渲染抽象（纹理+UV+DrawList+图层
 开关 设备验证）/PngToRgba8/RGBA——host 先行。
 真实内容三层同屏（NASA DEM+高德卫星+注记）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
@@ -16,6 +17,8 @@
   L3 导航：`debug.mapc.nav=1` 启引擎相机制（触摸识别在引擎 interaction 层：单指=俯仰/航向、
   双指拖动=平移、张拢=缩放；惯性滑行/贴地防护/`debug.mapc.flyto` 飞行），
   证据截图 `docs/assets/nav1_*.png`。
+- L3 相机/输入/场景四线已落：引擎相机制（含 LOD 灵敏度包络）、手势识别器、图层栈、矢量贴地切片
+  （详见 docs/system-gap-audit S3/S5/S6/S11 与 ultimate-goal §3）。
 
 ## A4 已开工（B1/B2 切片，2026-09-08 续）
 - 源盘点（gis-md `bf25c639` 文件/单测/语义差值）与拆分设计 → `docs/a4-merge-plan.md` §7。
