@@ -5,8 +5,8 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 51/51 绿。地形链路 44 + L1（S2 缓存×2/S4 退化链/S6 运动×3）+
-  L2 渲染抽象接口层（renderer/IRenderDevice，S1 第一步）——均为 host 先行单测。
+- Host：`./test_native.sh` → 52/52 绿。地形链路 44 + L1/L2：缓存×2/退化链/相机族/渲染抽象
+（IRenderDevice 纹理+UV 已设备验证）/+PngToRgba8（影像瓦→纹理数据腿）——host 先行。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。

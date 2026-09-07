@@ -75,6 +75,7 @@
 | TileUrlFormatter（{z}/{x}/{y}） | providers/TileUrlFormatter.{h,cpp} |
 | TileCacheBytesSource（URL 字节缓存 FIFO/计数，S2） | providers/TileCacheBytesSource.{h,cpp} |
 | DiskTileCacheBytesSource（落盘缓存，冷启层，S2） | providers/DiskTileCacheBytesSource.{h,cpp} |
+| PngToRgba8（PNG 瓦→RGBA8 纹理数据，S4 数据腿） | providers/PngToRgba8.{h,cpp} |
 | ITileBytesSource | providers/ITileBytesSource.h |
 | TerrainRgbTileSource（RGB 行） | providers/TerrainRgbTileSource.{h,cpp} |
 | StbPngDecoder / decodePngToRgb | providers/StbPngDecoder.{h,cpp} |

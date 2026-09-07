@@ -111,6 +111,8 @@ set(MAP_PROVIDERS_SOURCES
     providers/TileCacheBytesSource.cpp
     providers/DiskTileCacheBytesSource.h
     providers/DiskTileCacheBytesSource.cpp
+    providers/PngToRgba8.h
+    providers/PngToRgba8.cpp
 )
 
 # imagery：影像可用性/退化链语义（S4 先行；影像瓦/合成在渲染系统后）。
