@@ -57,6 +57,8 @@ set(MAP_CONTENT_SOURCES
     content/HeightmapSampler.cpp
     content/HeightmapTile.h
     content/HeightmapTile.cpp
+    content/TerrainTileMesh.h
+    content/TerrainTileMesh.cpp
 )
 
 target_sources(earth_engine_core PRIVATE

@@ -29,6 +29,8 @@ public:
     const TileKey& key() const { return key_; }
     int width() const { return width_; }
     int height() const { return height_; }
+    /// 原始高度栅格（row-major，row0=北）；调用方管理生命周期。
+    const double* heights() const { return heights_; }
 
     /// 瓦片覆盖的经纬矩形（弧度；由 scheme 提供）。
     Rectangle coverageRadians() const;

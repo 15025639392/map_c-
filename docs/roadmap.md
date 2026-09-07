@@ -101,8 +101,20 @@
 - 单测 +1 套件（test_heightmap_tile）：真实瓦键上的合成线性面，角/格点/行中点采样
   精确值、像素↔地理往返、瓦外 nullopt、1×N 退化、行序钉死（row0=瓦北边）。
   当前 17 套件全绿。
-- 下一步：相机/拾取 + Provider 接口（网络留到引入 curl 依赖时），
-  再往后是"瓦片树→查高服务"（把 HeightmapTile 挂到瓦片选择结果上）。
+
+### 地形几何（2026-09-08，T-V5/T-V1 的机制地基）
+
+- `content/TerrainTileMesh.{h,cpp}`——`TerrainMeshData`（ECEF 顶点/索引/平滑法线）+
+  `TerrainTileMeshBuilder::build(HeightmapTile, ellipsoid, nodesPerEdge)`：
+  节点贴瓦片边界（第 0/n 行列在瓦边），节点像素坐标 = i/n·(w-1) 双线性采样；
+  三角形外向绕序（{a,c,b}/{b,c,d}）；平滑法线 = 邻接面法线平均。
+  **几何与内容解耦**：节点数独立于高度图分辨率（T-E1 原则 host 侧体现）。
+- 单测 +1 套件（test_terrain_tile_mesh）：拓扑/顶点计数/角点贴瓦角、平坦面
+  法线外向且 ≈ 大地法线、山丘高度回读逐节点一致、**同级东西/南北相邻瓦共享边
+  顶点 ECEF 逐点重合（±1e-6 m，T-V5 无缝契约的机制前提）**、退化网格拒绝。
+  当前 18 套件全绿。
+- 下一步：相机/拾取 + Provider 接口，再往后是"瓦片树→查高→网格"装配
+  （把 HeightmapTile+TerrainTileMesh 挂到 SSE 选择结果上，逼近阶段 6）。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
