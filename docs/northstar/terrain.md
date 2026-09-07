@@ -117,6 +117,21 @@ z12 上限约束，M-near/M-mid/M-graze 同取 L12、M-high/M-coarse 取 L10）�
 取数耗时随瓦数线性（M-coarse 323 瓦 ≈ 40s）；assets 离线兜底：
 `setprop debug.mapc.src asset`（assets 截图集见上表 station1..5）。
 
+### 高德卫星影像源固定机位截图集（2026-09-09）
+
+NASA DEM 高度 + **高德卫星影像**（`webst01.is.autonavi.com/appmaptile?style=6`，JPEG 256，
+z3–18）同屏：`docs/assets/amap_satellite_st{1..5}.png`。真实遥感内容出图（机制证据；
+观感/朝向归用户）：
+
+| 机位 | 分带 | 瓦/顶点（logcat） | distinct（采样步 8px） |
+|---|---|---|---|
+| M-near | L12 | 2 / 8,712 | 14,654 |
+| M-mid | L12 | 42 / 182,952 | 16,195 |
+| M-graze | L12 | 72 / 313,632 | 7,733（掠视透天） |
+| M-high | L10 | 110 / 127,160 | 13,584 |
+| M-coarse | L10 | 323 / 373,388 | 15,313 |
+
+
 ## 本仓 host 机制证据（2026-09-08 起随轮次累积）
 
 > 判据表状态**未因此改动**（❌→✅ 需要整链/观感自证）；这里只登记**机制级子主张**的
