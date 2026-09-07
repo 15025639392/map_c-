@@ -35,4 +35,18 @@ struct SeamAuditResult {
 SeamAuditResult auditSameLevelSharedEdges(
     const std::vector<TerrainFrameAssembler::Frame>& frames);
 
+/// 跨级 T-顶点裂缝审计（T-V5 跨级半边 / T-V12 换代族的 host 取证，B4 前身）。
+///
+/// 场景：粗瓦 P(z) 与东/南邻 **z+1 子瓦**（邻瓦四叉树细分）共享边界。子瓦边界
+/// 上的节点以自身加密度采样真实表面；粗瓦边界是一条经过其 n+1 个顶点的**弦折线**
+/// （弦线只在粗顶点处贴合表面）。子瓦落在粗弦段之间的 T-顶点（真实表面点）与
+/// 粗弦的偏差 = 裂缝（含椭球曲率弦垂 与 地形曲率两项）。
+///
+/// 度量：每个子瓦边界节点到粗瓦边界弦折线的最近 ECEF 距离。注意
+/// 本度量 **>0 是常态**（弦垂不可能为 0，除非共享顶点重合），与同级审计
+/// （理想 ≈0）口径不同——用途是量化换代裂缝量级并做门禁：
+/// 修复 = 子瓦边界顶点吸附到粗弦（B4 remap/边 LUT），吸附量 = 本度量。
+SeamAuditResult auditCrossLevelTVertexGap(
+    const std::vector<TerrainFrameAssembler::Frame>& frames);
+
 } // namespace earth_engine
