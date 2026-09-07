@@ -100,8 +100,11 @@ bool HeightmapTile::isNoDataValue(double height) const {
 
 std::pair<double, double> HeightmapTile::minMaxHeight() const {
     const int count = width_ * height_;
-    if (noDataCount_ <= 0) {
-        // 无哨兵：保持既有全量扫描（结果不变）。
+    // 环栅格（borderInset>0，1px 裙边）：min/max 只统计**本瓦 cell 区**（像素
+    // 1..w-2 / 1..h-2）——环里是邻瓦真实数据，混进来会夸大本瓦包围体。
+    const bool ringGrid = borderInset_ > 0.0 && width_ >= 3 && height_ >= 3;
+    if (noDataCount_ <= 0 && !ringGrid) {
+        // 无哨兵 & 非环：保持既有全量扫描（结果不变）。
         double minH = heights_[0];
         double maxH = heights_[0];
         for (int i = 1; i < count; ++i) {
@@ -110,19 +113,29 @@ std::pair<double, double> HeightmapTile::minMaxHeight() const {
         }
         return {minH, maxH};
     }
-    // 有哨兵：min/max 只统计有效高度（no-data 混进来会把包围体/量化原点拉偏；
-    // 镜像 gis-md assignHeights —— min/max 是包围体与几何误差的输入，T-P13 教训）。
+    const auto isCellSample = [&](int index) {
+        if (ringGrid) {
+            const int row = index / width_;
+            const int col = index % width_;
+            if (row == 0 || row == height_ - 1 || col == 0 || col == width_ - 1) {
+                return false; // 环
+            }
+        }
+        return !(noDataCount_ > 0 && isNoDataValue(heights_[index]));
+    };
+    // 有哨兵或有环：min/max 只统计有效（非哨兵/非环）样本（镜像 gis-md assignHeights
+    // —— min/max 是包围体与几何误差的输入，T-P13 教训）。
     double minH = std::numeric_limits<double>::max();
     double maxH = std::numeric_limits<double>::lowest();
     for (int i = 0; i < count; ++i) {
-        if (isNoDataValue(heights_[i])) {
+        if (!isCellSample(i)) {
             continue;
         }
         minH = std::min(minH, heights_[i]);
         maxH = std::max(maxH, heights_[i]);
     }
     if (minH > maxH) {
-        return {0.0, 0.0}; // 全哨兵：无有效高度
+        return {0.0, 0.0}; // 全哨兵/无有效样本
     }
     return {minH, maxH};
 }

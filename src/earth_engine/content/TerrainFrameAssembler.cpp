@@ -11,8 +11,16 @@ std::vector<TerrainFrameAssembler::Frame> TerrainFrameAssembler::assemble(
     const TerrainTileMeshBuilder meshBuilder;
     for (const TileKey& key : selection.tiles) {
         const std::optional<TerrainGrid> grid = source.requestHeights(scheme, key, gridSize);
-        if (!grid || grid->empty() || grid->width != gridSize || grid->height != gridSize) {
-            continue; // 数据不可用/畸形：跳过（祖先回退属调度阶段）
+        if (!grid || grid->empty()) {
+            continue; // 数据不可用：跳过（祖先回退属调度阶段/装饰器）
+        }
+        // 栅格尺寸合法：顶点栅格 = gridSize²；cell-registered 环源（borderInset>0）
+        // = (gridSize+2)²（512 cell + 1px 环；网格采样按 tile 内缩映射，见 builder）。
+        const bool ringGrid = grid->borderInset > 0.0 &&
+                              grid->width == gridSize + 2 && grid->height == gridSize + 2;
+        if (grid->width < 2 || grid->height < 2 ||
+            !(grid->width == gridSize || ringGrid)) {
+            continue; // 畸形尺寸：跳过
         }
         const HeightmapTile tile(scheme, key, grid->heights.data(), grid->width, grid->height,
                                  grid->noDataValues.data(),
