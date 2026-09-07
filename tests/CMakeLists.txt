@@ -21,6 +21,9 @@ foreach(src ${MAP_TEST_SOURCES})
     get_filename_component(test_name ${src} NAME_WE)
     add_executable(${test_name} ${src})
     target_link_libraries(${test_name} PRIVATE earth_engine_core GTest::gtest_main)
+    # 仓库根（真实资产/数据 fixture 测试定位文件用；文件缺失时用例自行 GTEST_SKIP）。
+    target_compile_definitions(${test_name} PRIVATE
+        MAPC_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/..")
     add_test(NAME ${test_name} COMMAND ${test_name})
     # HTTP 测试需要 libcurl 与本地回环服务（ctest 串行跑，回环端口冲突风险低）。
     if(MAP_CURL_LIBRARY AND test_name STREQUAL "test_http_bytes_source")
