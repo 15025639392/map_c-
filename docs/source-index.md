@@ -78,4 +78,5 @@ terrain_cross_level、terrain_picking、
 terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
 `camera/`：camera_view、frustum、terrain_camera_pipeline；
-`providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source。
+`providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source、
+terrarium_asset_decode（真实资产字节回归，Terrarium 路径 + T-V5 真数据账本）。
