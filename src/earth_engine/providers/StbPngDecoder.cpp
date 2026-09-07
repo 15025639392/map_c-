@@ -1,7 +1,6 @@
 #include "earth_engine/providers/StbPngDecoder.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
 #include <stb_image.h>
 
 namespace earth_engine {
@@ -13,7 +12,9 @@ std::optional<RgbImage> decodePngToRgb(const uint8_t* data, size_t size) {
     int w = 0;
     int h = 0;
     int channels = 0;
-    // 强制 3 通道：PNG 灰度/调色板/带 alpha 统一转 RGB。
+    // 强制 3 通道：灰度/调色板/带 alpha/其它格式统一转 RGB。
+    // 注：函数名保留 decodePngToRgb（历史名），实际支持 stb 启用的所有格式——
+    // 2026-09-09 为高德卫星 JPEG 源放开 STBI_ONLY_PNG（PNG/JPEG 等）。
     unsigned char* pixels =
         stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 3);
     if (pixels == nullptr || w <= 0 || h <= 0) {

@@ -143,19 +143,24 @@ const char* kFs =
     "uniform vec3 uLightDir;\n"
     "uniform vec3 uBaseColor;\n"
     "uniform sampler2D uTex;\n"
+    "uniform int uImageryMode; // 1 = 卫星影像作 albedo（高德）；0 = 高度着色\n"
     "in float vHeight;\n"
     "in vec2 vUv;\n"
     "void main() {\n"
     "  vec3 n = normalize(vNor);\n"
     "  vec3 l = normalize(uLightDir);\n"
     "  float d = max(dot(n, l), 0.0);\n"
-    "  float t = clamp((vHeight - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
-    "  vec3 low  = vec3(0.35, 0.48, 0.25);\n"
-    "  vec3 mid  = vec3(0.48, 0.43, 0.30);\n"
-    "  vec3 high = vec3(0.66, 0.52, 0.34);\n"
-    "  vec3 tint = t < 0.5 ? mix(low, mid, t * 2.0) : mix(mid, high, (t - 0.5) * 2.0);\n"
-    "  float texM = texture(uTex, vUv).r;\n"
-    "  vec3 c = tint * (0.42 + 0.9 * d * d) * (0.78 + 0.22 * texM);\n"
+    "  vec3 albedo;\n"
+    "  if (uImageryMode == 1) {\n"
+    "    albedo = texture(uTex, vUv).rgb;\n"
+    "  } else {\n"
+    "    float t = clamp((vHeight - (-1000.0)) / 6000.0, 0.0, 1.0);\n"
+    "    vec3 low  = vec3(0.35, 0.48, 0.25);\n"
+    "    vec3 mid  = vec3(0.48, 0.43, 0.30);\n"
+    "    vec3 high = vec3(0.66, 0.52, 0.34);\n"
+    "    albedo = t < 0.5 ? mix(low, mid, t * 2.0) : mix(mid, high, (t - 0.5) * 2.0);\n"
+    "  }\n"
+    "  vec3 c = albedo * (0.42 + 0.9 * d * d);\n"
     "  fragColor = vec4(c, 1.0);\n"
     "}\n";
 
@@ -265,9 +270,10 @@ void TerrainScene::drawFrame() {
 
     device_->useProgram(programHandle_);
     device_->clearColor(0.42f, 0.55f, 0.74f, 1.0f);
-    if (textureHandle_ != 0 && tileTextures_.empty()) {
-        device_->bindTexture2D(0, textureHandle_); // 合成棋盘回退
+    if (tileTextures_.empty() && textureHandle_ != 0) {
+        device_->bindTexture2D(0, textureHandle_); // 高度着色模式仍绑安全纹理
         device_->setUniformInt("uTex", 0);
+        device_->setUniformInt("uImageryMode", 0);
     }
 
     // MVP：透视 × 视图（几何已 RTC 到相机位置）。
@@ -296,11 +302,15 @@ void TerrainScene::drawFrame() {
     device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
     for (size_t i = 0; i < meshHandles_.size(); ++i) { // DrawList-lite：逐瓦绘制
         if (!tileTextures_.empty()) {
-            // NASA 模式：每瓦真实影像纹理（缺失瓦回退棋盘）。
-            const uint32_t th =
-                tileTextures_[i] != 0u ? tileTextures_[i] : textureHandle_;
-            device_->bindTexture2D(0, th);
-            device_->setUniformInt("uTex", 0);
+            // 影像模式：每瓦高德卫星纹理（缺失瓦回退高度着色）。
+            const uint32_t th = tileTextures_[i];
+            if (th != 0u) {
+                device_->bindTexture2D(0, th);
+                device_->setUniformInt("uTex", 0);
+                device_->setUniformInt("uImageryMode", 1);
+            } else {
+                device_->setUniformInt("uImageryMode", 0);
+            }
         }
         device_->drawMesh(meshHandles_[i]);
     }
@@ -443,9 +453,13 @@ void TerrainScene::ensureGeometry() {
             TileCacheBytesSource cacheBytes(rawBytes, 512);
             TerrainRgbPngTileSource ringSource(cacheBytes, NasaRingDemSource::kNasaUrlTemplate,
                                                /*cellRegisteredRing=*/true, 6, 12);
-            ImageryTileSource imagery(cacheBytes, NasaRingDemSource::kNasaUrlTemplate,
-                                      [](const TileKey& k) { return k.z() >= 6 && k.z() <= 12; });
-            NasaRingDemSource demSource; // 占位：仅用其 URL 模板常量
+            // 影像内容 = 高德卫星（JPEG 256，XYZ；固定子域先行）。
+            NasaHttpBytesSource amapRaw;
+            TileCacheBytesSource amapCache(amapRaw, 512);
+            const char* amapUrl =
+                "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}";
+            ImageryTileSource imagery(amapCache, amapUrl,
+                                      [](const TileKey& k) { return k.z() >= 3 && k.z() <= 18; });
             int level = bandLevelForAltitudeMeters(camAltMeters_);
             if (level > 12) {
                 level = 12;
@@ -526,16 +540,9 @@ void TerrainScene::ensureGeometry() {
         md.normals.reserve(normals.size() * 3);
         md.heights.reserve(positions.size());
         md.uvs.reserve(positions.size() * 2);
-        // 瓦本地 AABB（RTC 后）→ UV 0..1（每瓦覆盖整张纹理；真实影像按 mercator 域映射）。
-        Vec3 mn(1e30, 1e30, 1e30), mx(-1e30, -1e30, -1e30);
-        for (const Vec3& p : positions) {
-            const Vec3 rel = p - cameraPosCache_;
-            mn = Vec3(std::min(mn.x(), rel.x()), std::min(mn.y(), rel.y()),
-                      std::min(mn.z(), rel.z()));
-            mx = Vec3(std::max(mx.x(), rel.x()), std::max(mx.y(), rel.y()),
-                      std::max(mx.z(), rel.z()));
-        }
-        const Vec3 range = mx - mn;
+        // UV = mercator 瓦内归一（u 西→东，v 北=0→顶；与影像瓦行序对齐）。
+        const Vec2 tOrigin = scheme.tileOriginMeters(frame.key);
+        const Vec2 tSize = scheme.tileSizeMeters(frame.key.z());
         for (size_t i = 0; i < positions.size(); ++i) {
             const Vec3 rel = positions[i] - cameraPosCache_;
             md.positions.push_back(static_cast<float>(rel.x()));
@@ -546,8 +553,10 @@ void TerrainScene::ensureGeometry() {
             md.normals.push_back(static_cast<float>(normals[i].z()));
             const Cartographic c = e.cartesianToCartographic(positions[i]);
             md.heights.push_back(static_cast<float>(c.height()));
-            const double u = range.x() > 1e-9 ? (rel.x() - mn.x()) / range.x() : 0.0;
-            const double v = range.y() > 1e-9 ? (rel.y() - mn.y()) / range.y() : 0.0;
+            const Vec2 meters = scheme.projectToMeters(c);
+            const double u = std::clamp((meters.x() - tOrigin.x()) / tSize.x(), 0.0, 1.0);
+            const double v =
+                std::clamp(1.0 - (meters.y() - tOrigin.y()) / tSize.y(), 0.0, 1.0);
             md.uvs.push_back(static_cast<float>(u));
             md.uvs.push_back(static_cast<float>(v));
         }
