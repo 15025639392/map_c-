@@ -19,12 +19,14 @@
 #include <earth_engine/camera/Frustum.h>
 #include <earth_engine/core/geodesy/Transforms.h>
 #include <earth_engine/content/HeightmapTile.h>
+#include <earth_engine/imagery/ImageryTileSource.h>
 #include <earth_engine/content/TerrainDataSource.h>
 #include <earth_engine/content/TerrainFrameAssembler.h>
 #include <earth_engine/core/geodesy/Ellipsoid.h>
 #include <earth_engine/core/math/Mat4.h>
 #include <earth_engine/core/math/MathUtils.h>
 #include <earth_engine/tiling/TerrainLodSelector.h>
+#include <earth_engine/providers/TileCacheBytesSource.h>
 #include <earth_engine/tiling/WebMercatorTileScheme.h>
 
 #define LOG_TAG "map_cplus"
@@ -173,9 +175,15 @@ void TerrainScene::destroyGlObjects() {
         if (textureHandle_ != 0) {
             device_->releaseTexture(textureHandle_);
         }
+        for (uint32_t th : tileTextures_) {
+            if (th != 0u) {
+                device_->releaseTexture(th);
+            }
+        }
     }
     programHandle_ = 0;
     textureHandle_ = 0;
+    tileTextures_.clear();
     meshHandles_.clear();
     device_.reset();
     geometryReady_ = false;
@@ -257,8 +265,8 @@ void TerrainScene::drawFrame() {
 
     device_->useProgram(programHandle_);
     device_->clearColor(0.42f, 0.55f, 0.74f, 1.0f);
-    if (textureHandle_ != 0) {
-        device_->bindTexture2D(0, textureHandle_);
+    if (textureHandle_ != 0 && tileTextures_.empty()) {
+        device_->bindTexture2D(0, textureHandle_); // 合成棋盘回退
         device_->setUniformInt("uTex", 0);
     }
 
@@ -286,8 +294,15 @@ void TerrainScene::drawFrame() {
     device_->setUniformMat3("uViewRot", vr);
     device_->setUniformVec3("uLightDir", 0.25f, 0.55f, 0.80f);
     device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
-    for (uint32_t h : meshHandles_) { // DrawList-lite：逐瓦绘制
-        device_->drawMesh(h);
+    for (size_t i = 0; i < meshHandles_.size(); ++i) { // DrawList-lite：逐瓦绘制
+        if (!tileTextures_.empty()) {
+            // NASA 模式：每瓦真实影像纹理（缺失瓦回退棋盘）。
+            const uint32_t th =
+                tileTextures_[i] != 0u ? tileTextures_[i] : textureHandle_;
+            device_->bindTexture2D(0, th);
+            device_->setUniformInt("uTex", 0);
+        }
+        device_->drawMesh(meshHandles_[i]);
     }
     if (frameCount_ == 1) {
         const GLenum err = glGetError();
@@ -423,7 +438,14 @@ void TerrainScene::ensureGeometry() {
         }
         if (nasa) {
             // NASA Terrain-RGB 514 带环源（z6–12；近景受源上限 z12 约束）。
-            NasaRingDemSource demSource; // 字节源 + 引擎环模式源（组合体）
+            // 高度栅格与影像纹理共享同一瓦片缓存（S2 去重：同 URL 单次下载）。
+            NasaHttpBytesSource rawBytes;
+            TileCacheBytesSource cacheBytes(rawBytes, 512);
+            TerrainRgbPngTileSource ringSource(cacheBytes, NasaRingDemSource::kNasaUrlTemplate,
+                                               /*cellRegisteredRing=*/true, 6, 12);
+            ImageryTileSource imagery(cacheBytes, NasaRingDemSource::kNasaUrlTemplate,
+                                      [](const TileKey& k) { return k.z() >= 6 && k.z() <= 12; });
+            NasaRingDemSource demSource; // 占位：仅用其 URL 模板常量
             int level = bandLevelForAltitudeMeters(camAltMeters_);
             if (level > 12) {
                 level = 12;
@@ -432,8 +454,20 @@ void TerrainScene::ensureGeometry() {
                 level = 6;
             }
             const int demNodes = (level >= 12) ? 65 : 33;
-            frames = buildDemFrames(scheme, demSource.source, bandRect, e, level, demNodes,
+            frames = buildDemFrames(scheme, ringSource, bandRect, e, level, demNodes,
                                     /*requestCells=*/512);
+            // 每瓦真实影像纹理（字节走同一缓存 → 单次下载；S4→渲染全链）。
+            tileTextures_.clear();
+            tileTextures_.reserve(frames.size());
+            for (const auto& f : frames) {
+                const auto tr = imagery.fetchTexture(f.key);
+                const uint32_t th =
+                    tr.has_value() ? device_->createTexture2D(tr->texture) : 0u;
+                if (th == 0u) {
+                    ALOG("imagery texture miss tile %s", f.key.toString().c_str());
+                }
+                tileTextures_.push_back(th);
+            }
             ALOG("dem nasa band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
             if (frames.empty() && assetManager_ != nullptr) {
@@ -444,6 +478,7 @@ void TerrainScene::ensureGeometry() {
             const int level = bandLevelForAltitudeMeters(camAltMeters_);
             const int demNodes = (level >= 13) ? 65 : 33; // 近景(L13)网格加密
             frames = buildDemFrames(scheme, demSource, bandRect, e, level, demNodes, 256);
+            tileTextures_.clear();
             ALOG("dem asset band level=%d tiles=%zu foot=%d", level, frames.size(),
                  footOpt.has_value() ? 1 : 0);
         }
@@ -468,6 +503,7 @@ void TerrainScene::ensureGeometry() {
         for (const auto& frame : assembled) {
             frames.push_back(DemFrame{frame.key, frame.mesh});
         }
+        tileTextures_.clear(); // 合成源无影像纹理
     }
     if (frames.empty()) {
         ALOGE("ensureGeometry: no frames assembled");
