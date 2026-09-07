@@ -77,6 +77,12 @@ Java_com_mapcplus_terrain_NativeRenderer_nativeNavGesture(JNIEnv*, jclass, jdoub
                       static_cast<double>(pinchScale));
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_mapcplus_terrain_NativeRenderer_nativeNavPan(JNIEnv*, jclass, jdouble dxPx,
+                                                      jdouble dyPx) {
+    gScene.navPan(static_cast<double>(dxPx), static_cast<double>(dyPx));
+}
+
 namespace demoscene {
 
 std::optional<std::vector<uint8_t>> httpGetBytes(const std::string& url) {

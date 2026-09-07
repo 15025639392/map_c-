@@ -190,3 +190,132 @@ TEST(MapCameraSystem, NaNInputsAreIgnoredNotFatal) {
     // 脏输入被忽略 → 无速率 → 仍静止。
     EXPECT_TRUE(cam.isSettled());
 }
+
+// ---------------------------------------------------------------------------
+// L3 slice B：中心平移（pan）——ENU 地面投影 / 惯性收敛 / 移入高地贴地抬升 /
+// pan×rotate×zoom 组合 / 确定性。
+// ---------------------------------------------------------------------------
+TEST(MapCameraSystem, PanRightwardDragMovesCenterWestAndSettles) {
+    MapCameraSystem cam;
+    cam.setPose(makePose(106.44, 29.70, 15000.0, 45.0, 0.0)); // 朝北望
+    cam.setGroundFn(flatGround(0.0));
+    const double lon0 = cam.pose().lonRad;
+    const double lat0 = cam.pose().latRad;
+    // 持续向右拖动（内容跟随手指 → 中心西移，lon 减小）。
+    for (int i = 0; i < 40; ++i) {
+        cam.setPanGesture(3.0, 0.0, 1080.0);
+        cam.step(0.016);
+        EXPECT_LE(cam.pose().lonRad + 1e-12, lon0); // 单调不东移
+        EXPECT_TRUE(std::isfinite(cam.pose().latRad));
+    }
+    EXPECT_LT(cam.pose().lonRad, lon0 - 1e-4); // 明显西移
+    EXPECT_NEAR(cam.pose().latRad, lat0, 1e-9); // 纯横向拖动不改纬度（yaw0）
+    // 抬手后惯性收敛。
+    int steps = 0;
+    for (; steps < 40000 && !cam.isSettled(); ++steps) {
+        cam.step(0.016);
+    }
+    EXPECT_LT(steps, 40000);
+    EXPECT_TRUE(cam.isSettled());
+    EXPECT_TRUE(std::isfinite(cam.pose().lonRad));
+}
+
+TEST(MapCameraSystem, PanDisplacementIsProportionalToPixels) {
+    const auto run = [](double dxPx) {
+        MapCameraSystem cam;
+        cam.setPose(makePose(106.44, 29.70, 15000.0, 45.0, 0.0));
+        cam.setGroundFn(flatGround(0.0));
+        const double lon0 = cam.pose().lonRad;
+        for (int i = 0; i < 30; ++i) {
+            cam.setPanGesture(dxPx, 0.0, 1080.0);
+            cam.step(0.016);
+        }
+        for (int i = 0; i < 4000 && !cam.isSettled(); ++i) {
+            cam.step(0.016);
+        }
+        return lon0 - cam.pose().lonRad; // 西移量（正）
+    };
+    const double d1 = run(1.0);
+    const double d2 = run(2.0);
+    EXPECT_GT(d1, 0.0);
+    EXPECT_GT(d2, 0.0);
+    // 速率线性于像素（同 dt/帧数；阻尼逐帧等比 → 位移比 ≈ 2）。
+    EXPECT_NEAR(d2 / d1, 2.0, 0.4);
+}
+
+TEST(MapCameraSystem, PanIntoHigherGroundIsClampedToClearance) {
+    MapCameraSystem cam;
+    cam.setPose(makePose(106.40, 29.70, 600.0, 45.0, 0.0)); // 低地起手，高度 600
+    // 地表：lon < 106.45 → 200m；lon ≥ 106.45 → 1500m（高地）。
+    const double ridgeLonRad = degreesToRadians(106.45);
+    cam.setGroundFn([ridgeLonRad](const Cartographic& c) -> std::optional<double> {
+        return c.longitude() >= ridgeLonRad ? 1500.0 : 200.0;
+    });
+    // 向左拖动 → 中心东移进入高地（持续拖动直到越过界；逐帧送输入故不进 settled 早退）。
+    for (int i = 0; i < 600; ++i) {
+        cam.setPanGesture(-20.0, 0.0, 1080.0); // 向左拖 → 中心东移
+        cam.step(0.016);
+        if (cam.pose().lonRad > ridgeLonRad) {
+            break;
+        }
+    }
+    EXPECT_GT(cam.pose().lonRad, ridgeLonRad); // 已进入高地
+    // 高度已被抬到 1500+5 净空之上（贴地防护随中心走）。
+    EXPECT_GE(cam.pose().altitudeMeters, 1500.0 + cam.params().minClearanceMeters - 1e-9);
+    EXPECT_TRUE(std::isfinite(cam.pose().altitudeMeters));
+}
+
+TEST(MapCameraSystem, PanRotateZoomCombinedFrame) {
+    MapCameraSystem cam;
+    cam.setPose(makePose(106.44, 29.70, 15000.0, 45.0, 0.0));
+    cam.setGroundFn(flatGround(0.0));
+    const MapCameraSystem::Pose p0 = cam.pose();
+    for (int i = 0; i < 60; ++i) {
+        cam.setGesture(1.0, 0.5, 1.002, 1080.0); // 旋转 + 轻微拉近
+        cam.setPanGesture(1.5, -1.0, 1080.0);    // 同帧平移（右上）
+        cam.step(0.016);
+        const MapCameraSystem::Pose p = cam.pose();
+        EXPECT_TRUE(std::isfinite(p.lonRad) && std::isfinite(p.latRad) &&
+                    std::isfinite(p.altitudeMeters) && std::isfinite(p.headingRad) &&
+                    std::isfinite(p.pitchRad));
+    }
+    const MapCameraSystem::Pose p1 = cam.pose();
+    // 三轴确实都动了（中心/高度/朝向均变化）。
+    EXPECT_TRUE(std::fabs(p1.lonRad - p0.lonRad) > 1e-8 ||
+                std::fabs(p1.latRad - p0.latRad) > 1e-8);
+    EXPECT_NE(p1.altitudeMeters, p0.altitudeMeters);
+    EXPECT_NE(p1.headingRad, p0.headingRad);
+    // 抬手后收敛。
+    int steps = 0;
+    for (; steps < 40000 && !cam.isSettled(); ++steps) {
+        cam.step(0.016);
+    }
+    EXPECT_LT(steps, 40000);
+    EXPECT_TRUE(cam.isSettled());
+}
+
+TEST(MapCameraSystem, PanDeterministicSameInputsSamePose) {
+    const auto run = []() {
+        MapCameraSystem cam;
+        cam.setPose(makePose(106.44, 29.70, 10000.0, 50.0, 30.0));
+        cam.setGroundFn(flatGround(120.0));
+        const double dx[] = {0.0, 2.0, -3.0, 5.0};
+        const double dy[] = {-1.0, 0.0, 2.0, -4.0};
+        for (int i = 0; i < 90; ++i) {
+            const int k = i % 4;
+            cam.setPanGesture(dx[k], dy[k], 1080.0);
+            cam.step(0.016);
+        }
+        for (int i = 0; i < 4000 && !cam.isSettled(); ++i) {
+            cam.step(0.016);
+        }
+        return cam.pose();
+    };
+    const MapCameraSystem::Pose a = run();
+    const MapCameraSystem::Pose b = run();
+    EXPECT_DOUBLE_EQ(a.lonRad, b.lonRad);
+    EXPECT_DOUBLE_EQ(a.latRad, b.latRad);
+    EXPECT_DOUBLE_EQ(a.altitudeMeters, b.altitudeMeters);
+    EXPECT_DOUBLE_EQ(a.headingRad, b.headingRad);
+    EXPECT_DOUBLE_EQ(a.pitchRad, b.pitchRad);
+}

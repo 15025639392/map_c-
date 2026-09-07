@@ -31,6 +31,8 @@ public:
 
     /// L3 导航（debug.mapc.nav=1）：手势增量输入（Java 手势线程调用；GL 线程消费）。
     void navGesture(double dxPx, double dyPx, double pinchScale);
+    /// L3 导航：双指平移增量（质心像素；与旋转/缩放同帧可组合）。
+    void navPan(double dxPx, double dyPx);
     bool navEnabled() const { return navEnabled_; }
 
 private:
@@ -83,8 +85,18 @@ private:
     double navDyPx_ = 0.0;
     double navScale_ = 1.0;
     bool navHasInput_ = false;
+    double navPanDxPx_ = 0.0;
+    double navPanDyPx_ = 0.0;
+    bool navPanHas_ = false;
     double navLastStepMs_ = 0.0;
     std::string flyProp_; // debug.mapc.flyto="lon,lat,alt,pit,hdg" 触发一次引擎 flyTo
+    std::string panProbeProp_; // debug.mapc.panprobe="dx,dy" 注入 ~45 帧平移（设备证据）
+    double panProbeDx_ = 0.0;
+    double panProbeDy_ = 0.0;
+    int panProbeFrames_ = 0;
+    bool panProbeArmed_ = false;
+    double panProbeStartLon_ = 0.0;
+    double panProbeStartLat_ = 0.0;
     // 贴地防护查高缓存：相机正下（中心经纬固定）所在瓦的栅格。
     std::optional<earth_engine::TileKey> guardKey_;
     earth_engine::TerrainGrid guardGrid_;

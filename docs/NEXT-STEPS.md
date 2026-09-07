@@ -12,8 +12,8 @@
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
-  L3 导航：`debug.mapc.nav=1` 启引擎相机制（惯性滑行/贴地防护/`debug.mapc.flyto` 飞行），
-  证据截图 `docs/assets/nav1_*.png`。
+  L3 导航：`debug.mapc.nav=1` 启引擎相机制（单指=俯仰/航向、双指拖动=平移、张拢=缩放；
+  惯性滑行/贴地防护/`debug.mapc.flyto` 飞行），证据截图 `docs/assets/nav1_*.png`。
 
 ## A4 已开工（B1/B2 切片，2026-09-08 续）
 - 源盘点（gis-md `bf25c639` 文件/单测/语义差值）与拆分设计 → `docs/a4-merge-plan.md` §7。

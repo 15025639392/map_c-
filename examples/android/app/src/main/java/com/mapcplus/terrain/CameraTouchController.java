@@ -115,10 +115,10 @@ public class CameraTouchController implements GLSurfaceView.OnTouchListener {
                 return true;
             case MotionEvent.ACTION_MOVE: {
                 if (pc >= 2) {
+                    // 双指：质心拖动 = 平移（pan），张/拢指 = 缩放（native 端同帧组合）。
                     float cx = centroidX(ev);
                     float cy = centroidY(ev);
-                    float dx = cx - lastX1;
-                    float dy = cy - lastY1;
+                    NativeRenderer.navPan(cx - lastX1, cy - lastY1);
                     lastX1 = cx;
                     lastY1 = cy;
                     float d = dist(ev);
@@ -127,8 +127,11 @@ public class CameraTouchController implements GLSurfaceView.OnTouchListener {
                         scale = d / startDist; // 张指(拉近>1)
                     }
                     startDist = d;
-                    NativeRenderer.navGesture(dx, dy, scale);
+                    if (scale != 1f) {
+                        NativeRenderer.navGesture(0.0, 0.0, scale);
+                    }
                 } else {
+                    // 单指：拖动 = 俯仰/航向（旋转轴）。
                     float x = ev.getX();
                     float y = ev.getY();
                     NativeRenderer.navGesture(x - lastX1, y - lastY1, 1.0);

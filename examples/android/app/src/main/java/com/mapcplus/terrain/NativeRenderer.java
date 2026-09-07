@@ -61,6 +61,7 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     private static native void nativeSetAssetManager(android.content.res.AssetManager am);
     private static native boolean nativeNavEnabled();
     private static native void nativeNavGesture(double dxPx, double dyPx, double pinchScale);
+    private static native void nativeNavPan(double dxPx, double dyPx);
 
     /** Java 手势驱动的相机更新（拖动=俯仰/航向，双指=高度）。 */
     public static void updateCamera(double lonDeg, double latDeg, double altMeters,
@@ -76,6 +77,11 @@ public class NativeRenderer implements GLSurfaceView.Renderer {
     /** 手势增量：dx/dy = 屏幕像素（y 向下为正），pinchScale = 本帧双指距离比（>1 拉近）。 */
     public static void navGesture(double dxPx, double dyPx, double pinchScale) {
         nativeNavGesture(dxPx, dyPx, pinchScale);
+    }
+
+    /** 双指平移增量（质心像素；native 与旋转/缩放同帧组合）。 */
+    public static void navPan(double dxPx, double dyPx) {
+        nativeNavPan(dxPx, dyPx);
     }
 
     @Override public void onSurfaceCreated(GL10 unused, EGLConfig config) {

@@ -92,12 +92,14 @@ adb shell am start -n com.mapcplus.terrain/.MainActivity
   vs `docs/assets/baked0_station2.png`（M-mid z12 42 瓦：Δpx≈0.003%、glErr=0x0）、
   `disp1_station1.png` vs `baked0_station1.png`（M-near z12 2 瓦：Δpx 10≈0.0004%）——
   属性通道位移与 baked 逐像素一致。
-- 引擎相机制（L3）：`debug.mapc.nav`（1=手势走引擎 MapCameraSystem：惯性滑行/贴地防护/flyTo，
-  重启生效；0=默认 Java 直连基线，像素不变）——`src/earth_engine/camera/MapCameraSystem.{h,cpp}`
-  host 语义（10 用例，57/57）。设备证据 logcat `nav pose` + 截图 `docs/assets/nav1_*.png`
-  （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住）。
-- 飞行（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`（lon,lat,alt,
-  pitch,heading；改值重触发；目标高度低于地表会被贴地抬升到净空之上）。
+- 引擎相机制（L3）：`debug.mapc.nav`（1=手势走引擎 MapCameraSystem：惯性滑行/贴地防护/flyTo/
+  中心平移，重启生效；0=默认 Java 直连基线，像素不变）——`src/earth_engine/camera/MapCameraSystem.{h,cpp}`
+  host 语义（14 用例，57/57）。手势（nav=1）：单指拖动=俯仰/航向、双指拖动=平移、双指张拢=缩放。
+  设备证据 logcat `nav pose`（lon/lat/yaw/pit/alt）+ 截图 `docs/assets/nav1_*.png`
+  （glide 抬手后续动、flyTo 目标 10m 被贴地抬到 ground+5=237m 停住、pan lon 106.440→106.404）。
+- 飞行/平移探针（需 nav=1）：`adb shell setprop debug.mapc.flyto "106.44,29.70,300,70,200"`
+  （lon,lat,alt,pitch,heading；改值重触发；目标高度低于地表会被贴地抬升到净空之上）；
+  `adb shell setprop debug.mapc.panprobe "25,15"`（dx,dy 像素；注入 ~45 帧中心平移，设备证据用）。
 - 手势：拖动=俯仰/航向，双指=高度；截图 `adb exec-out screencap -p > shot.png`。
 - 截图集与机读指标见 `docs/northstar/terrain.md`「固定机位截图集」（`docs/assets/station1..5.png`）。
 - ASCII 缩略证据包：`docs/assets/evidence.md`（文本环境快速预览五机位）。

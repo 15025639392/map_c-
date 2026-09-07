@@ -24,7 +24,9 @@ namespace earth_engine {
 ///   无地表数据（GroundHeightFn 返回 nullopt）按"无地表约束"处理，回落 minAltitude；
 /// - flyTo：把 yaw/pitch/altitude 以平滑步向目标插值（时长 params.flyToSeconds），
 ///   结束后钉死并 settled；任意手势输入取消 flyTo；
-/// - 中心平移（lon/lat 跟随）属后续轮（引擎先俯仰/航向/高度三轴 + 防穿地）。
+/// - **中心平移（pan）**：setPanGesture 双指质心增量 → ENU 地面投影米/秒 → 与旋转/缩放
+///   同阻尼/收敛判定/速率上限；中心经纬小步球面积分；贴地防护随中心移动（移入高地 →
+///   高度抬到净空之上）；与 rotate/zoom 可同帧组合；
 /// - 确定性：同初值同 (输入, dt) 序列 → 同输出；输入含 NaN/Inf → 忽略该帧手势
 ///   （不吞脏数据）；各轴边界钳制保证无 NaN。
 /// - 本类不依赖任何平台/渲染：地面查高由调用方注入（回调），引擎只做运动/防护语义。
@@ -39,6 +41,8 @@ public:
         double minAltitudeMeters = 30.0;   // 无地表数据时的高度下限
         double maxAltitudeMeters = 250000.0; // 拉远上限（防无限出带）
         double flyToSeconds = 2.5;         // flyTo 时长（秒）
+        double fovRadians = 1.0471975511965976; // 视场角（60°；平移像素→地面米换算用）
+        double maxPanRateMetersPerSec = 8000.0; // 平移速率上限（防跑飞）
     };
 
     struct Pose {
@@ -72,6 +76,10 @@ public:
     void setGesture(double dragDxPx, double dragDyPx, double pinchScale,
                     double screenHeightPx);
 
+    /// 注入本帧**平移**增量（双指拖动质心像素；y 向下为正；同一帧可再喂缩放）。
+    /// 中心点沿地面平移（与俯仰/航向/高度轴独立、可同帧组合）。
+    void setPanGesture(double panDxPx, double panDyPx, double screenHeightPx);
+
     /// 一步：手势→速率（或惯性衰减）→ 位置积分 → 边界/贴地 clamp → flyTo 进度。
     /// dt 被模型内部钳到 maxDtSeconds；settled 且无输入时零开销早退。
     void step(double dtSeconds);
@@ -99,6 +107,13 @@ private:
     double gScale_ = 1.0;
     double gScreenHeightPx_ = 1080.0;
     bool gHasInput_ = false;
+    // 平移手势暂存（单帧消费；与旋转/缩放轴独立）。
+    double gPanDxPx_ = 0.0;
+    double gPanDyPx_ = 0.0;
+    bool gHasPan_ = false;
+    // 中心平移速率（ENU 地面平面：东/北，米/秒；惯性同阻尼/收敛判定）。
+    double panEastRateMps_ = 0.0;
+    double panNorthRateMps_ = 0.0;
 
     // flyTo 内部态。
     bool flying_ = false;

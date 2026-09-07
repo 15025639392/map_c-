@@ -47,7 +47,7 @@ UV/纹理账，截图 tex_overlay_Mmid.png）——影像同屏/GPU 高度纹理
 （影像 albedo/高度着色）；M-mid 42/42 瓦出图 distinct 16195（截图 amap_satellite_Mmid.png）；
 S4→渲染全链真实内容出图打通；观感/朝向归用户 |
 | **S5** | **矢量与标注** | 零行：矢量瓦解码（MVT…）、样式/换肤、贴地不浮、字体图集标注、线宽/字号屏幕恒定 | ★ 矢量（阶段 5） | 拾取/查询走 TerrainPicking 扩展；高度贴地依赖现有查高服务 |
-| **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有。**L1 已落**：CameraMotion + TerrainGroundGuard + CameraNavController（运动/不穿地/联动控制器）。**L3 slice A 已落**：引擎层相机制 **MapCameraSystem**（`camera/MapCameraSystem.{h,cpp}`，turret 语义：正下中心经纬+高度+heading/pitch；手势增量→GestureToMotion 速率→CameraMotion 惯性/阻尼→TerrainGroundGuard 不穿地→flyTo 目标先贴地抬升；host 10 用例，57/57）——demo 手势层接线：nav=1 时 Java 只送屏幕增量、每 GL 帧引擎步进并回灌位姿（`debug.mapc.nav`/`debug.mapc.flyto`），nav=0 直连基线**像素级不变**（nav0_station2 vs baked0_station2 Δpx=0）；设备证据：惯性滑行 logcat（pose 抬手后继续变化 settled=0→1）、flyTo 到 10m 目标被抬到 ground+5=237m 停住、截图 docs/assets/nav1_*.png → 剩余：中心平移(pan)/LOD 感知控制/多平台输入抽象 |
+| **S6** | **相机导航系统**（成熟化） | demo 只有"拖动/双指"两条裸路径；缺穿地防护、病态俯仰兜底、LOD 感知控制、**多平台输入抽象** | ★ 相机/手势（阶段 2/7）：北极星相机判据（指下锚定/惯性收敛/不穿地） | CameraView/Frustum 已有。**L1 已落**：CameraMotion + TerrainGroundGuard + CameraNavController（运动/不穿地/联动控制器）。**L3 slice A 已落**：引擎层相机制 **MapCameraSystem**（`camera/MapCameraSystem.{h,cpp}`，turret 语义：正下中心经纬+高度+heading/pitch；手势增量→GestureToMotion 速率→CameraMotion 惯性/阻尼→TerrainGroundGuard 不穿地→flyTo 目标先贴地抬升；host 用例 14/14，57/57）——demo 手势层接线：nav=1 时 Java 只送屏幕增量、每 GL 帧引擎步进并回灌位姿（`debug.mapc.nav`/`debug.mapc.flyto`/`debug.mapc.panprobe`），nav=0 直连基线**像素级不变**（nav0_station2 vs baked0_station2 Δpx=0）。**L3 slice B 已落**：中心平移轴（pan）——双指质心增量经 ENU 地面投影→米/秒（与旋转/缩放同阻尼/收敛/上限、同帧组合），中心经纬球面小步积分，贴地防护随中心走（移入高地抬升到净空之上）；demo 双指拖动=平移（捏合缩放保留、单指仍旋转/俯仰）；设备证据 logcat pose lon 106.440→106.404（~4km 西移）+ 截图 nav1_pan_*.png（Δpx≈44.6%）。剩余：LOD 感知控制/多平台输入抽象 |
 | **S7** | **光照/大气/颜色系统** | 无太阳/天光模型、无大气散射/雾（空气透视）、无 tonemap/颜色管理（北极星：亮部超范围优雅压回） | ★ 光照/颜色（阶段 9） | demo 现简单半球漫反射着色器是出发点 |
 | **S8** | **数据格式与内容注册** | 地形只吃 Terrain-RGB/Terrarium PNG；缺格式注册/内容类型（quantized-mesh/3D Tiles/glTF、JPEG/WebP、MVT/PMTiles）+ 每源元数据（availability 四叉树、geometricError、attribution） | B3 真实 geometricError；3D Tiles（阶段 8） | HeightmapCodec 族 + ITerrainDataSource 语义的注册点 |
 | **S9** | **时间/动画系统** | 无 Clock/缓动层；相机动画、换代 geomorph/fade、数据进场动画无驱动 | 换代过渡（T-V12）机制族 | 跨级吸附核（content/SeamAudit snap）已备，动画系统给换代"何时吸/吸多少/多快" |
@@ -134,16 +134,17 @@ S4→渲染全链真实内容出图打通；观感/朝向归用户 |
 - 顺序：①矢量瓦解码 + 样式求值（host 单测：样式→几何预算）→ ②贴地（45° 判据机
   制侧）→ ③标注（字体图集，依赖 S1）。
 
-**S6 相机导航成熟化 —— 引擎层相机制已落（slice A），剩余平移/输入抽象**
+**S6 相机导航成熟化 —— 引擎层相机制已落（slice A 三轴 + slice B 中心平移），剩余输入抽象/LOD**
 - 接缝：`camera/` 组件族（CameraView/Frustum/CameraMotion/GestureToMotion/
   TerrainGroundGuard/CameraNavController）之上新增**引擎相机制 MapCameraSystem**
-  （turret 语义，`debug.mapc.nav=1` demo 已接线；host 套件 test_map_camera_system 10 用例；
-  设备证据：nav1_station2_preset/glide、nav1_flyto_*、nav1_guardfloor_* 截图 + logcat）。
+  （turret 语义，`debug.mapc.nav=1` demo 已接线；host 套件 test_map_camera_system 14 用例；
+  设备证据：nav1_station2_preset/glide、nav1_flyto_*、nav1_guardfloor_*、nav1_pan_* 截图 + logcat）。
 - 已落：惯性滑行（抬手衰减收敛）、贴地防护（flyTo 目标 10m 被抬到 ground+5=237m）、
-  flyTo 平滑插值（目标高度先贴地抬升）、按住制动；nav=0 基线像素不变。
-- 剩余：①中心平移（pan 落 CameraNavController orbit 语义/球面移动，接现有查高链）
-  → ②`interaction/` 手势识别器抽象（tap/double/pinch/rotate 平台无关，S11 输入层）
-  → ③LOD 感知控制（近地面降速/俯仰联动）→ ④flyTo 进默认观感入口（现为 prop 触发）。
+  flyTo 平滑插值（目标高度先贴地抬升）、按住制动、**中心平移**（双指质心→ENU 地面米/秒，
+  与旋转/缩放同帧组合；贴地随中心走；设备 logcat lon 106.440→106.404）；nav=0 基线像素不变。
+- 剩余：①`interaction/` 手势识别器抽象（tap/double/pinch/rotate 平台无关，S11 输入层）
+  → ②LOD 感知控制（近地面降速/俯仰联动）→ ③flyTo/pan 进默认观感入口
+  （现为 prop/探针触发）→ ④pan 时贴地回落策略（移入低地是否降高，现保持绝对椭球高）。
 - 判据钩子：北极星相机判据（指下锚定、惯性收敛、不穿地、病态俯仰兜底）。
 
 **S7 光照/大气/颜色 —— demo 着色器起步**

@@ -334,7 +334,36 @@ void TerrainScene::drawFrame() {
                 flyProp_.clear();
             }
         }
+        // L3 平移探针（设备证据用）：debug.mapc.panprobe="dxPx,dyPx" 注入 ~45 帧中心平移
+        // （走同一引擎平移轴；真实双指经 Java navPan → 同一 setPanGesture 通道）。
+        if (panProbeFrames_ <= 0 && (frameCount_ % 30) == 1) {
+            char probeProp[PROP_VALUE_MAX] = {0};
+            if (__system_property_get("debug.mapc.panprobe", probeProp) > 0 &&
+                probeProp[0] != '\0') {
+                if (panProbeProp_ != probeProp) {
+                    panProbeProp_ = probeProp;
+                    double dx = 0.0, dy = 0.0;
+                    if (std::sscanf(probeProp, "%lf,%lf", &dx, &dy) == 2) {
+                        panProbeDx_ = dx;
+                        panProbeDy_ = dy;
+                        panProbeFrames_ = 45;
+                        panProbeArmed_ = true;
+                        panProbeStartLon_ = camLonDeg_;
+                        panProbeStartLat_ = camLatDeg_;
+                        ALOG("nav panProbe dx=%.0f dy=%.0f frames=%d", dx, dy,
+                             panProbeFrames_);
+                    }
+                }
+            } else {
+                panProbeProp_.clear();
+            }
+        }
         navStep(); // L3：手势/flyTo → 引擎 MapCameraSystem.step → 位姿回灌
+        if (panProbeArmed_ && panProbeFrames_ == 0) {
+            panProbeArmed_ = false;
+            ALOG("nav panProbe end pose lon=%.5f lat=%.5f alt=%.0f (was lon=%.5f lat=%.5f)",
+                 camLonDeg_, camLatDeg_, camAltMeters_, panProbeStartLon_, panProbeStartLat_);
+        }
     }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     ++frameCount_;
@@ -468,6 +497,16 @@ void TerrainScene::navGesture(double dxPx, double dyPx, double pinchScale) {
     navHasInput_ = true;
 }
 
+void TerrainScene::navPan(double dxPx, double dyPx) {
+    if (!navEnabled_) {
+        return;
+    }
+    std::lock_guard<std::mutex> lock(navMutex_);
+    navPanDxPx_ += dxPx;
+    navPanDyPx_ += dyPx;
+    navPanHas_ = true;
+}
+
 std::optional<double> TerrainScene::guardGroundHeightRad(double lonRad, double latRad) {
     const Cartographic c(lonRad, latRad, 0.0);
     if (!useDem_) {
@@ -521,7 +560,8 @@ void TerrainScene::navStep() {
     }
 
     double dx = 0.0, dy = 0.0, scale = 1.0;
-    bool hasInput = false;
+    double panDx = 0.0, panDy = 0.0;
+    bool hasInput = false, hasPan = false;
     {
         std::lock_guard<std::mutex> lock(navMutex_);
         hasInput = navHasInput_;
@@ -532,34 +572,56 @@ void TerrainScene::navStep() {
         navDyPx_ = 0.0;
         navScale_ = 1.0;
         navHasInput_ = false;
+        hasPan = navPanHas_;
+        panDx = navPanDxPx_;
+        panDy = navPanDyPx_;
+        navPanDxPx_ = 0.0;
+        navPanDyPx_ = 0.0;
+        navPanHas_ = false;
     }
-    if (!hasInput && navCam_.isSettled()) {
+    // 平移探针注入（同引擎平移轴；供设备证据/无物理双指时使用）。
+    if (panProbeFrames_ > 0) {
+        --panProbeFrames_;
+        hasPan = true;
+        panDx = panProbeDx_;
+        panDy = panProbeDy_;
+    }
+    if (!hasInput && !hasPan && navCam_.isSettled()) {
         return; // 收敛静止且无输入：零开销（几何不失效）
     }
     if (hasInput) {
         navCam_.setGesture(dx, dy, scale,
                            static_cast<double>(std::min(width_, height_)));
     }
-    navCam_.step(dt); // 引擎步进：手势→速率 / 惯性衰减→积分→贴地 clamp（内部 dt 上限）
+    if (hasPan) {
+        navCam_.setPanGesture(panDx, panDy, static_cast<double>(std::min(width_, height_)));
+    }
+    navCam_.step(dt); // 引擎步进：旋转/缩放/平移/惯性→积分→贴地 clamp（内部 dt 上限）
 
     const MapCameraSystem::Pose pose = navCam_.pose();
+    const double lonDeg = radiansToDegrees(pose.lonRad);
+    const double latDeg = radiansToDegrees(pose.latRad);
     const double headingDeg = radiansToDegrees(pose.headingRad);
     const double pitchDeg = radiansToDegrees(pose.pitchRad);
     const double altMeters = pose.altitudeMeters;
-    const bool changed = std::fabs(headingDeg - camHeadingDeg_) > 0.02 ||
-                         std::fabs(pitchDeg - camPitchDeg_) > 0.02 ||
-                         std::fabs(altMeters - camAltMeters_) >
-                             std::max(1.0, camAltMeters_ * 0.002);
+    const bool changed =
+        std::fabs(lonDeg - camLonDeg_) > 5.0e-6 || std::fabs(latDeg - camLatDeg_) > 5.0e-6 ||
+        std::fabs(headingDeg - camHeadingDeg_) > 0.02 ||
+        std::fabs(pitchDeg - camPitchDeg_) > 0.02 ||
+        std::fabs(altMeters - camAltMeters_) > std::max(1.0, camAltMeters_ * 0.002);
     if (changed) {
+        camLonDeg_ = lonDeg;
+        camLatDeg_ = latDeg;
         camHeadingDeg_ = headingDeg;
         camPitchDeg_ = pitchDeg;
         camAltMeters_ = altMeters;
         cameraUserSet_ = true;
-        geometryReady_ = false; // RTC 网格随相机位姿重传
+        geometryReady_ = false; // RTC 网格/瓦片选择随相机位姿重传
     }
     if (frameCount_ % 15 == 0) {
-        ALOG("nav pose yaw=%.1f pit=%.1f alt=%.0f fly=%d settled=%d", headingDeg, pitchDeg,
-             altMeters, navCam_.flying() ? 1 : 0, navCam_.isSettled() ? 1 : 0);
+        ALOG("nav pose lon=%.5f lat=%.5f yaw=%.1f pit=%.1f alt=%.0f fly=%d settled=%d", lonDeg,
+             latDeg, headingDeg, pitchDeg, altMeters, navCam_.flying() ? 1 : 0,
+             navCam_.isSettled() ? 1 : 0);
     }
 }
 

@@ -8,6 +8,7 @@ namespace earth_engine {
 
 namespace {
 constexpr double kTwoPi = 2.0 * 3.14159265358979323846;
+constexpr double kEarthRadiusMeters = 6378137.0; // 平移用球面半径（WGS84 赤道）
 
 double wrapRadians(double r) {
     r = std::fmod(r, kTwoPi);
@@ -22,6 +23,7 @@ double wrapDeltaRad(double d) {
     return d - 3.14159265358979323846;
 }
 double smoothStep(double t) { return t * t * (3.0 - 2.0 * t); }
+double clampAbs(double v, double bound) { return std::clamp(v, -bound, bound); }
 
 bool isFinite(double v) { return std::isfinite(v); }
 } // namespace
@@ -57,6 +59,8 @@ void MapCameraSystem::setPose(const Pose& pose) {
     state_.yawRateRadPerSec = 0.0;
     state_.pitchRateRadPerSec = 0.0;
     state_.distRateMetersPerSec = 0.0;
+    panEastRateMps_ = 0.0;
+    panNorthRateMps_ = 0.0;
     settled_ = true;
     cancelFlyTo();
 }
@@ -82,6 +86,17 @@ void MapCameraSystem::setGesture(double dragDxPx, double dragDyPx, double pinchS
     gScale_ = pinchScale;
     gScreenHeightPx_ = screenHeightPx;
     gHasInput_ = true;
+}
+
+void MapCameraSystem::setPanGesture(double panDxPx, double panDyPx, double screenHeightPx) {
+    if (!isFinite(panDxPx) || !isFinite(panDyPx) || !isFinite(screenHeightPx) ||
+        screenHeightPx <= 0.0) {
+        return; // 脏输入忽略本帧平移
+    }
+    gPanDxPx_ = panDxPx;
+    gPanDyPx_ = panDyPx;
+    gScreenHeightPx_ = screenHeightPx;
+    gHasPan_ = true;
 }
 
 void MapCameraSystem::flyTo(const Pose& target) {
@@ -118,11 +133,12 @@ void MapCameraSystem::step(double dtSeconds) {
     if (!(dtSeconds > 0.0) || !isFinite(dtSeconds)) {
         return;
     }
-    // 有手势 → 打断 flyTo（用户接管）。
-    if (gHasInput_) {
+    const bool anyInput = gHasInput_ || gHasPan_;
+    // 有手势/平移 → 打断 flyTo（用户接管）。
+    if (anyInput) {
         cancelFlyTo();
     }
-    if (!flying_ && !gHasInput_ && settled_) {
+    if (!flying_ && !anyInput && settled_) {
         return; // 收敛静止且无输入：零开销早退
     }
 
@@ -153,12 +169,47 @@ void MapCameraSystem::step(double dtSeconds) {
             }
         }
         motion_.stepInertia(state_, dtSeconds);
+
+        // —— 中心平移轴（引擎层；与旋转/缩放轴独立、可同帧组合）——
+        if (gHasPan_) {
+            if (gPanDxPx_ != 0.0 || gPanDyPx_ != 0.0) {
+                // 像素 → 地面米：视距处每像素世界尺寸 × 屏幕高归一；
+                // 内容跟随手指 → 中心反向移动（相机右向/屏幕上向的地面投影）。
+                const double mpp = 2.0 * state_.distanceMeters *
+                                   std::tan(0.5 * params_.fovRadians) / gScreenHeightPx_;
+                const double yaw = state_.yawRad;
+                const double sp = std::max(std::sin(state_.pitchRad), 0.017); // 防掠视除零
+                const double sy = std::sin(yaw);
+                const double cy = std::cos(yaw);
+                // 右向 ENU：(cy,-sy)；屏幕上向地面水平投影方向 (sy,cy)，米/px=mpp·sp。
+                const double eastRaw = gPanDxPx_ * cy + gPanDyPx_ * sp * sy;
+                const double northRaw = -gPanDxPx_ * sy + gPanDyPx_ * sp * cy;
+                panEastRateMps_ = -eastRaw * mpp / dtSeconds;
+                panNorthRateMps_ = -northRaw * mpp / dtSeconds;
+            } else {
+                // 按住但无增量：平移轴制动。
+                panEastRateMps_ = 0.0;
+                panNorthRateMps_ = 0.0;
+            }
+        }
+        // pan 惯性/阻尼（与旋转同阻尼系数与 dt 上限；速率上限钳制）。
+        const double hPan = std::clamp(dtSeconds, 0.0, params_.motion.maxDtSeconds);
+        const double dampFactor =
+            std::max(0.0, 1.0 - params_.motion.dampingPerSecond * hPan);
+        panEastRateMps_ =
+            clampAbs(panEastRateMps_ * dampFactor, params_.maxPanRateMetersPerSec);
+        panNorthRateMps_ =
+            clampAbs(panNorthRateMps_ * dampFactor, params_.maxPanRateMetersPerSec);
+        // 中心经纬球面小步积分（北/东，米）。
+        centerLatRad_ += panNorthRateMps_ * hPan / kEarthRadiusMeters;
+        const double cosLat = std::max(std::cos(centerLatRad_), 0.05);
+        centerLonRad_ += panEastRateMps_ * hPan / (kEarthRadiusMeters * cosLat);
     }
 
     // 高度上限（防无限拉远出带）。
     state_.distanceMeters = std::min(state_.distanceMeters, params_.maxAltitudeMeters);
 
-    // 贴地防护：正下方地表高度 + 净空（clamped → 抬到 floor）；
+    // 贴地防护：正下方（当前中心）地表高度 + 净空（clamped → 抬到 floor）；
     // 无地表数据（enforceClearance 返回 nullopt 或未 clamp）不抬，
     // 统一再由 minAltitude 兜底（防极端贴地）。
     if (ground_ != nullptr) {
@@ -171,9 +222,12 @@ void MapCameraSystem::step(double dtSeconds) {
     state_.distanceMeters = std::max(state_.distanceMeters, params_.minAltitudeMeters);
 
     if (!flying_) {
-        settled_ = motion_.isSettled(state_);
+        const double th = params_.motion.settleThresholdPerSec;
+        settled_ = motion_.isSettled(state_) && std::fabs(panEastRateMps_) < th &&
+                   std::fabs(panNorthRateMps_) < th;
     }
     gHasInput_ = false;
+    gHasPan_ = false;
 }
 
 } // namespace earth_engine
