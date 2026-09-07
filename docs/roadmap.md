@@ -212,6 +212,14 @@
   无 libcurl 环境自动 GTEST_SKIP。
 - 至此 Provider 栈闭环：URL 模板 → **HTTP** → PNG → Terrain-RGB → 每瓦栅格。
 
+### 帧缓存/增量更新（2026-09-08，调度-lite）
+
+- `content/TerrainFrameCache.{h,cpp}`——按瓦键缓存已装配帧；update(相机) 只对缺瓦
+  请求数据源（同相机零请求），产出自当前视野帧（排序），淘汰视野外瓦；报告
+  requested/reused/evicted/frameCount。
+- 单测 +1 套件（test_terrain_frame_cache）：同相机 update 零重取且数据源计数与报告
+  一致、小移动有复用且请求数 < 帧数、跨半球大跳全刷+淘汰、帧排序稳定。31 套件全绿。
+
 ## 3. 合并点细节（阶段 6 执行时再展开）
 
 地形服务并入清单（届时逐项对 gis-md `scaffold/src/earth_engine/` 核对、按许可证与来源注明 commit）：

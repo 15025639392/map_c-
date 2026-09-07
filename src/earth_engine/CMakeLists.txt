@@ -67,6 +67,8 @@ set(MAP_CONTENT_SOURCES
     content/TerrainFrameAssembler.cpp
     content/TerrainPicking.h
     content/TerrainPicking.cpp
+    content/TerrainFrameCache.h
+    content/TerrainFrameCache.cpp
 )
 
 # camera：地表相机视图地基（位姿基/射线/地表脚印/地形帧管线）。
