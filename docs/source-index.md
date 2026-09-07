@@ -42,6 +42,7 @@
 | TerrainMeshData / TerrainTileMeshBuilder | content/TerrainTileMesh.{h,cpp} |
 | ITerrainDataSource / TerrainGrid（heights + noDataValues） | content/TerrainDataSource.h |
 | TerrainFrameAssembler | content/TerrainFrameAssembler.{h,cpp} |
+| auditSameLevelSharedEdges / SeamAuditResult（同级共享边审计） | content/SeamAudit.{h,cpp} |
 | TerrainFrameCache（增量/淘汰） | content/TerrainFrameCache.{h,cpp} |
 | pickTerrainFrame / TerrainPickHit | content/TerrainPicking.{h,cpp} |
 
@@ -67,7 +68,7 @@
 `geodesy/`：cartographic、ellipsoid、projection、quadtree_geometric_error、ray_ellipsoid、transforms；
 `tiling/`：tile_key、tile_scheme、terrain_lod_selector；
 `content/`：heightmap_codec、heightmap_sampler、heightmap_tile、terrain_tile_mesh、
-terrain_frame_assembler、terrain_cross_level、terrain_picking、terrain_frame_cache、
-decode_nodata_semantics（gis-md 哨兵语义对拍）、fixed_station_baseline；
+terrain_frame_assembler、seam_audit、terrain_cross_level、terrain_picking、
+terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、fixed_station_baseline；
 `camera/`：camera_view、frustum、terrain_camera_pipeline；
 `providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source。
