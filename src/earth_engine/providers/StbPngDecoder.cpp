@@ -5,6 +5,28 @@
 
 namespace earth_engine {
 
+std::optional<RgbaImage> decodePngToRgba(const uint8_t* data, size_t size) {
+    if (data == nullptr || size == 0) {
+        return std::nullopt;
+    }
+    int w = 0;
+    int h = 0;
+    int channels = 0;
+    // 4 通道输出：PNG alpha 保留；无 alpha 格式 alpha=255。
+    unsigned char* pixels =
+        stbi_load_from_memory(data, static_cast<int>(size), &w, &h, &channels, 4);
+    if (pixels == nullptr || w <= 0 || h <= 0) {
+        return std::nullopt;
+    }
+    RgbaImage image;
+    image.width = w;
+    image.height = h;
+    const size_t count = static_cast<size_t>(w) * h * 4;
+    image.rgba.assign(pixels, pixels + count);
+    stbi_image_free(pixels);
+    return image;
+}
+
 std::optional<RgbImage> decodePngToRgb(const uint8_t* data, size_t size) {
     if (data == nullptr || size == 0) {
         return std::nullopt;

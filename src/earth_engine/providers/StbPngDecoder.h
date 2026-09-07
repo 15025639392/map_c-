@@ -22,4 +22,14 @@ struct RgbImage {
 /// 输出统一 3 通道 RGB（stb 内部做通道转换）；alpha 丢弃。
 std::optional<RgbImage> decodePngToRgb(const uint8_t* data, size_t size);
 
+/// RGBA 解码（4 通道，保留 alpha）——透明叠加层（路网注记/矢量垫层）用。
+/// 源无 alpha（JPEG/RGB PNG）→ alpha 全 255。
+struct RgbaImage {
+    int width = 0;
+    int height = 0;
+    std::vector<uint8_t> rgba;
+    bool empty() const { return width <= 0 || height <= 0 || rgba.empty(); }
+};
+std::optional<RgbaImage> decodePngToRgba(const uint8_t* data, size_t size);
+
 } // namespace earth_engine

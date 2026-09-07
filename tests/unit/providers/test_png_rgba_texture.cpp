@@ -45,6 +45,32 @@ TEST(PngToRgba8, GarbageAndEmptyRejected) {
     EXPECT_FALSE(PngToRgba8::decode(nullptr, 0).has_value());
 }
 
+TEST(PngToRgba8, KeepAlphaPreservesTransparency) {
+    // 2×2 RGBA PNG：左半 alpha=128、右半 alpha=0。
+    const std::vector<uint8_t> rgba = {
+        255, 0, 0, 128, 0, 255, 0, 0,
+        0, 0, 255, 128, 255, 255, 255, 0,
+    };
+    const std::vector<uint8_t> png = mapc_test::writePngRgbaRgba(rgba, 2, 2);
+    const auto tex = PngToRgba8::decodeKeepAlpha(png.data(), png.size());
+    ASSERT_TRUE(tex.has_value());
+    ASSERT_TRUE(tex->valid());
+    EXPECT_EQ(tex->rgba8[3], 128);
+    EXPECT_EQ(tex->rgba8[4 + 3], 0);
+    EXPECT_EQ(tex->rgba8[8 + 3], 128);
+    EXPECT_EQ(tex->rgba8[12 + 3], 0);
+}
+
+TEST(PngToRgba8, KeepAlphaOnOpaqueSourceYields255) {
+    // RGB PNG（无 alpha 通道）→ keepAlpha 解码 alpha=255。
+    const std::vector<uint8_t> png = twoByTwoRgb();
+    const auto tex = PngToRgba8::decodeKeepAlpha(png.data(), png.size());
+    ASSERT_TRUE(tex.has_value());
+    for (size_t i = 3; i < tex->rgba8.size(); i += 4) {
+        EXPECT_EQ(tex->rgba8[i], 255);
+    }
+}
+
 TEST(PngToRgba8, DimensionLimitEnforced) {
     // 2×2 PNG 配 maxDimensionPx=1 → 拒。
     const std::vector<uint8_t> png = twoByTwoRgb();

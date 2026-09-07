@@ -102,4 +102,52 @@ inline std::vector<uint8_t> writePngRgb(const std::vector<uint8_t>& rgb, int w, 
     return png;
 }
 
+/// RGBA PNG（color type 6，保留 alpha）。
+inline std::vector<uint8_t> writePngRgbaRgba(const std::vector<uint8_t>& rgba, int w, int h) {
+    std::vector<uint8_t> png;
+    png.insert(png.end(), {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A});
+    std::vector<uint8_t> ihdr;
+    appendBigEndian32(ihdr, static_cast<uint32_t>(w));
+    appendBigEndian32(ihdr, static_cast<uint32_t>(h));
+    ihdr.insert(ihdr.end(), {8, 6, 0, 0, 0}); // bit8, color RGBA
+    appendPngChunk(png, "IHDR", ihdr);
+    std::vector<uint8_t> raw;
+    raw.reserve(static_cast<size_t>(h) * (w * 4 + 1));
+    for (int row = 0; row < h; ++row) {
+        raw.push_back(0);
+        const size_t off = static_cast<size_t>(row) * w * 4;
+        raw.insert(raw.end(), rgba.begin() + static_cast<long>(off),
+                   rgba.begin() + static_cast<long>(off) + static_cast<size_t>(w) * 4);
+    }
+    std::vector<uint8_t> zlib;
+    zlib.push_back(0x78);
+    zlib.push_back(0x01);
+    size_t pos = 0;
+    while (pos < raw.size()) {
+        const size_t remain = raw.size() - pos;
+        const size_t len = remain < 65535 ? remain : 65535;
+        const bool final = (pos + len == raw.size());
+        zlib.push_back(static_cast<uint8_t>((final ? 1 : 0) | (0 << 1)));
+        zlib.push_back(static_cast<uint8_t>(len & 0xFF));
+        zlib.push_back(static_cast<uint8_t>((len >> 8) & 0xFF));
+        const uint16_t nlen = static_cast<uint16_t>(~len & 0xFFFF);
+        zlib.push_back(static_cast<uint8_t>(nlen & 0xFF));
+        zlib.push_back(static_cast<uint8_t>((nlen >> 8) & 0xFF));
+        zlib.insert(zlib.end(), raw.begin() + static_cast<long>(pos),
+                    raw.begin() + static_cast<long>(pos + len));
+        pos += len;
+    }
+    uint32_t s1 = 1;
+    uint32_t s2 = 0;
+    for (const uint8_t b : raw) {
+        s1 = (s1 + b) % 65521;
+        s2 = (s2 + s1) % 65521;
+    }
+    const uint32_t adlerFinal = (s2 << 16) | s1;
+    appendBigEndian32(zlib, adlerFinal);
+    appendPngChunk(png, "IDAT", zlib);
+    appendPngChunk(png, "IEND", {});
+    return png;
+}
+
 } // namespace mapc_test

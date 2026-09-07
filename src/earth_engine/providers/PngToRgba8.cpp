@@ -4,6 +4,18 @@
 
 namespace earth_engine {
 
+namespace {
+
+render::Texture2DData rgbaToTexture(const RgbaImage& image) {
+    render::Texture2DData out;
+    out.width = image.width;
+    out.height = image.height;
+    out.rgba8 = image.rgba; // 已是 RGBA8（4 通道，alpha 保留）
+    return out;
+}
+
+} // namespace
+
 std::optional<render::Texture2DData> PngToRgba8::decode(const uint8_t* pngBytes, size_t size,
                                                         int maxDimensionPx) {
     const int limit = maxDimensionPx > 0 ? maxDimensionPx : 4096;
@@ -30,6 +42,21 @@ std::optional<render::Texture2DData> PngToRgba8::decode(const uint8_t* pngBytes,
         }
     }
     return out;
+}
+
+std::optional<render::Texture2DData> PngToRgba8::decodeKeepAlpha(const uint8_t* bytes,
+                                                                 size_t size,
+                                                                 int maxDimensionPx) {
+    const int limit = maxDimensionPx > 0 ? maxDimensionPx : 4096;
+    if (bytes == nullptr || size == 0) {
+        return std::nullopt;
+    }
+    const std::optional<RgbaImage> image = decodePngToRgba(bytes, size);
+    if (!image || image->width <= 0 || image->height <= 0 || image->width > limit ||
+        image->height > limit) {
+        return std::nullopt;
+    }
+    return rgbaToTexture(*image);
 }
 
 } // namespace earth_engine
