@@ -63,6 +63,7 @@
 | StbPngDecoder / decodePngToRgb | providers/StbPngDecoder.{h,cpp} |
 | TerrainRgbPngTileSource（PNG 瓦片） | providers/TerrainRgbPngTileSource.{h,cpp} |
 | CurlBytesSource（HTTP） | providers/CurlBytesSource.{h,cpp} |
+| ImageTileBodyCheck（响应体魔数白名单 PNG/JPEG/WebP） | providers/ImageTileBodyCheck.h |
 
 ## 测试 → 模块（tests/unit/…）
 `core/`：mat4、math_utils、ray、ray_triangle、rectangle、vec2、vec3；

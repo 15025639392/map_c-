@@ -3,10 +3,10 @@
 > 给下一位会话/用户的一页指引。仓库/远端同步（36+ 提交，HEAD=origin/main）。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 38/38 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
+- Host：`./test_native.sh` → 39/39 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
   PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+
   同级共享边审计（SeamAudit）+ 带环源 seam 闭合（B2 切片）+ 祖先回退（调度-lite）+
-  五固定机位回归）。
+  响应体魔数检查（网络硬化）+ 五固定机位回归）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。

@@ -137,3 +137,12 @@
 - 测试 `tests/unit/content/test_ancestor_fallback`：直连透传逐位一致 / 子层整层缺失
   回退重采样 ≈ 世界函数 / 深度上限生效 / 全缺 nullopt / 装配端到端无空洞对照。
   host 38/38、android-arm64 core 编译过。
+
+### 网络硬化差值表项入账（2026-09-09，ImageTileBodyCheck）
+
+- `providers/ImageTileBodyCheck.h`（转写 gis-md bf25c639 同名件）：PNG/JPEG/WebP 魔数
+  白名单 + 12B 下限；接入点 = TerrainRgbPngTileSource 解码前（CDN 200 + NoSuchKey XML
+  毒体挡在 PNG 解码入口外）。本仓尚无 HttpCache——该检查现为入口硬化，
+  缓存落地时（接真实网络源）自动成为毒体防线。
+- 测试 `tests/unit/providers/test_image_tile_body_check`：白名单/拒 XML/空体/截断体 +
+  源入口集成。差值表对应行状态 → 已并入；host 39/39。
