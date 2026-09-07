@@ -14,6 +14,7 @@
 | [docs/northstar/terrain.md](docs/northstar/terrain.md) | **地形模块判据活文档**（本仓状态跟踪） |
 | [docs/northstar/terrain-gis-md-baseline.md](docs/northstar/terrain-gis-md-baseline.md) | 地形判据契约全文（gis-md 快照，勿手改） |
 | [docs/roadmap.md](docs/roadmap.md) | 从 0 重建分阶段计划 + 合并点规则 |
+| [docs/NEXT-STEPS.md](docs/NEXT-STEPS.md) | 交接/下一步指引（怎么跑、怎么判、决策点） |
 
 ## 快速上手（host native，macOS）
 
