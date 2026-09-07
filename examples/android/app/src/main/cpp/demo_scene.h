@@ -26,8 +26,8 @@ private:
 
     std::unique_ptr<earth_engine::render::IRenderDevice> device_;
     uint32_t programHandle_ = 0;
-    uint32_t meshHandle_ = 0;
-    unsigned int indexCount_ = 0;
+    // 每瓦一个设备网格句柄（DrawList-lite：逐瓦上传/绘制/账本到瓦级）。
+    std::vector<uint32_t> meshHandles_;
     bool geometryReady_ = false;
     int width_ = 1080;
     int height_ = 2400;

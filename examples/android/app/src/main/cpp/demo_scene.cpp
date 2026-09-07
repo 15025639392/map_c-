@@ -161,12 +161,12 @@ void TerrainScene::destroyGlObjects() {
         if (programHandle_ != 0) {
             device_->releaseProgram(programHandle_);
         }
-        if (meshHandle_ != 0) {
-            device_->releaseMesh(meshHandle_);
+        for (uint32_t h : meshHandles_) {
+            device_->releaseMesh(h);
         }
     }
     programHandle_ = 0;
-    meshHandle_ = 0;
+    meshHandles_.clear();
     device_.reset();
     geometryReady_ = false;
 }
@@ -213,7 +213,7 @@ void TerrainScene::drawFrame() {
     if (!geometryReady_) {
         ensureGeometry();
     }
-    if (!geometryReady_ || programHandle_ == 0 || meshHandle_ == 0) {
+    if (!geometryReady_ || programHandle_ == 0 || meshHandles_.empty()) {
         if (frameCount_ % 120 == 1) {
             ALOG("draw frame=%ld (no geometry yet)", static_cast<long>(frameCount_));
         }
@@ -250,7 +250,9 @@ void TerrainScene::drawFrame() {
     device_->setUniformMat3("uViewRot", vr);
     device_->setUniformVec3("uLightDir", 0.25f, 0.55f, 0.80f);
     device_->setUniformVec3("uBaseColor", 0.55f, 0.45f, 0.30f);
-    device_->drawMesh(meshHandle_);
+    for (uint32_t h : meshHandles_) { // DrawList-lite：逐瓦绘制
+        device_->drawMesh(h);
+    }
     if (frameCount_ == 1) {
         const GLenum err = glGetError();
         ALOG("draw debug: glErr=0x%x (render via IRenderDevice)", err);
@@ -437,53 +439,50 @@ void TerrainScene::ensureGeometry() {
     }
     tilesDrawn_ = static_cast<long>(frames.size());
 
-    // 汇总全部顶点（RTC 到相机），打包 pos/normal/index。
-    std::vector<float> pos;
-    std::vector<float> nor;
-    std::vector<float> hei;
-    std::vector<uint32_t> idx;
-    size_t base = 0;
+    // DrawList-lite：每瓦单独 RTC + 上传（账本到瓦级；逐瓦绘制见 drawFrame）。
+    meshHandles_.clear();
+    totalVertices_ = 0;
+    unsigned int totalTriangles = 0;
     for (const auto& frame : frames) {
         const std::vector<Vec3>& positions = frame.mesh.positionsEcef;
         const std::vector<Vec3>& normals = frame.mesh.normals;
+        if (positions.empty() || frame.mesh.indices.empty()) {
+            continue;
+        }
+        render::MeshUploadData md;
+        md.positions.reserve(positions.size() * 3);
+        md.normals.reserve(normals.size() * 3);
+        md.heights.reserve(positions.size());
         for (size_t i = 0; i < positions.size(); ++i) {
             const Vec3 rel = positions[i] - cameraPosCache_;
-            pos.push_back(static_cast<float>(rel.x()));
-            pos.push_back(static_cast<float>(rel.y()));
-            pos.push_back(static_cast<float>(rel.z()));
-            nor.push_back(static_cast<float>(normals[i].x()));
-            nor.push_back(static_cast<float>(normals[i].y()));
-            nor.push_back(static_cast<float>(normals[i].z()));
+            md.positions.push_back(static_cast<float>(rel.x()));
+            md.positions.push_back(static_cast<float>(rel.y()));
+            md.positions.push_back(static_cast<float>(rel.z()));
+            md.normals.push_back(static_cast<float>(normals[i].x()));
+            md.normals.push_back(static_cast<float>(normals[i].y()));
+            md.normals.push_back(static_cast<float>(normals[i].z()));
             const Cartographic c = e.cartesianToCartographic(positions[i]);
-            hei.push_back(static_cast<float>(c.height()));
+            md.heights.push_back(static_cast<float>(c.height()));
         }
-        for (uint32_t index : frame.mesh.indices) {
-            idx.push_back(index + static_cast<uint32_t>(base));
+        md.indices = frame.mesh.indices; // 每瓦索引本瓦 0 基，无需平移
+        const uint32_t h = device_->uploadMesh(md);
+        if (h == 0) {
+            ALOGE("ensureGeometry: uploadMesh failed for tile %s",
+                  frame.key.toString().c_str());
+            continue;
         }
-        base += positions.size();
+        meshHandles_.push_back(h);
+        totalVertices_ += static_cast<int>(positions.size());
+        totalTriangles += static_cast<unsigned int>(frame.mesh.indices.size() / 3);
     }
-    totalVertices_ = static_cast<int>(pos.size() / 3);
-    indexCount_ = static_cast<unsigned int>(idx.size());
-    if (pos.empty() || idx.empty()) {
-        ALOGE("ensureGeometry: empty buffers");
-        return;
-    }
-
-    // 经 IRenderDevice 上传（GLES3 实现内部建 VAO/VBO/EBO）。
-    render::MeshUploadData md;
-    md.positions = std::move(pos);
-    md.normals = std::move(nor);
-    md.heights = std::move(hei);
-    md.indices = std::move(idx);
-    meshHandle_ = device_->uploadMesh(md);
-    if (meshHandle_ == 0) {
-        ALOGE("ensureGeometry: uploadMesh failed");
+    if (meshHandles_.empty()) {
+        ALOGE("ensureGeometry: no tiles uploaded");
         geometryReady_ = false;
         return;
     }
     geometryReady_ = true;
-    ALOG("geometry ready: tiles=%ld vertices=%d triangles=%u", static_cast<long>(tilesDrawn_),
-         totalVertices_, indexCount_ / 3);
+    ALOG("geometry ready: tiles=%zu vertices=%d triangles=%u",
+         meshHandles_.size(), totalVertices_, totalTriangles);
 }
 
 } // namespace demoscene
