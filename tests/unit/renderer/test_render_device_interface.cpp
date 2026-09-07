@@ -60,6 +60,7 @@ public:
                                 mesh.normals.size() * sizeof(float) +
                                 mesh.heights.size() * sizeof(float) +
                                 mesh.uvs.size() * sizeof(float) +
+                                mesh.displacements.size() * sizeof(float) +
                                 mesh.indices.size() * sizeof(uint32_t);
         stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());
         return h;
@@ -278,6 +279,19 @@ TEST(RenderDevice, OptionalUvsAccepted) {
     MeshUploadData bad = m;
     bad.uvs = {0.0f, 0.0f, 1.0f}; // 数量不匹配 → 无效
     EXPECT_FALSE(bad.valid());
+}
+
+TEST(RenderDevice, OptionalDisplacementsAccepted) {
+    MeshUploadData m = makeMesh();
+    m.displacements = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 2.0f, 0.0f, 0.0f, 3.0f};
+    EXPECT_TRUE(m.valid());
+    MeshUploadData bad = m;
+    bad.displacements = {0.0f, 0.0f, 1.0f, 0.0f}; // 长度错 → 无效
+    EXPECT_FALSE(bad.valid());
+    HostTraceRenderDevice dev;
+    EXPECT_NE(dev.uploadMesh(m), 0u);
+    // 位移字节计入账：pos36+nor36+idx12+disp36 = 120。
+    EXPECT_EQ(dev.stats().uploadedBytes, 9u * 4u + 9u * 4u + 3u * 4u + 9u * 4u);
 }
 
 TEST(RenderDevice, OptionalHeightsAccepted) {

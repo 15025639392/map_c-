@@ -44,6 +44,7 @@ private:
         GLuint vboNor = 0;
         GLuint vboHei = 0;
         GLuint vboUv = 0;
+        GLuint vboDisp = 0;
         GLuint ebo = 0;
         GLsizei indexCount = 0;
     };

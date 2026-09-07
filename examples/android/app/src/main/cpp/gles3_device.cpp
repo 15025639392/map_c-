@@ -102,6 +102,18 @@ uint32_t Gles3RenderDevice::uploadMesh(const earth_engine::render::MeshUploadDat
         glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
     }
 
+    if (mesh.displacements.empty()) {
+        glVertexAttrib3f(4, 0.0f, 0.0f, 0.0f);
+    } else {
+        glGenBuffers(1, &m.vboDisp);
+        glBindBuffer(GL_ARRAY_BUFFER, m.vboDisp);
+        glBufferData(GL_ARRAY_BUFFER,
+                     static_cast<GLsizeiptr>(mesh.displacements.size() * sizeof(float)),
+                     mesh.displacements.data(), GL_STATIC_DRAW);
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    }
+
     glGenBuffers(1, &m.ebo);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,
@@ -133,6 +145,7 @@ void Gles3RenderDevice::releaseMesh(uint32_t handle) {
     if (m.vboNor) glDeleteBuffers(1, &m.vboNor);
     if (m.vboHei) glDeleteBuffers(1, &m.vboHei);
     if (m.vboUv) glDeleteBuffers(1, &m.vboUv);
+    if (m.vboDisp) glDeleteBuffers(1, &m.vboDisp);
     if (m.ebo) glDeleteBuffers(1, &m.ebo);
     meshes_.erase(it);
     stats_.liveMeshes = static_cast<uint32_t>(meshes_.size());

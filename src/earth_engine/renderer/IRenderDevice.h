@@ -10,18 +10,24 @@ namespace earth_engine::render {
 /// 可选逐顶点高度通道（数量 = 顶点数；空 = 无高度通道，实现按 0 处理）+
 /// 可选逐顶点 UV（每顶点 2 float；空 = 无纹理坐标，实现按 0 处理）+
 /// 三角形索引（3 的倍数）。
+/// 可选逐顶点位移向量（每顶点 3 float；空 = 无，顶点 shader 按 0 处理）。
+/// 用途：GPU 位移几何的「位移向量属性通道」——基准模板网格(椭球面) + 每瓦位移
+/// 向量 = 模板复用 + 顶点级位移，无需 vertex 纹理采样（部分驱动受限场景的替代）。
 struct MeshUploadData {
     std::vector<float> positions;
     std::vector<float> normals;
-    std::vector<float> heights; // 可选：长度 == positions/3 或为空
-    std::vector<float> uvs;     // 可选：长度 == positions/3*2 或为空
+    std::vector<float> heights;      // 可选：长度 == positions/3 或为空
+    std::vector<float> uvs;          // 可选：长度 == positions/3*2 或为空
+    std::vector<float> displacements; // 可选：长度 == positions/3*3 或为空
     std::vector<uint32_t> indices;
 
     bool valid() const {
         return positions.size() % 3 == 0 && normals.size() == positions.size() &&
                indices.size() % 3 == 0 && !indices.empty() &&
                (heights.empty() || heights.size() == positions.size() / 3) &&
-               (uvs.empty() || uvs.size() == positions.size() / 3 * 2);
+               (uvs.empty() || uvs.size() == positions.size() / 3 * 2) &&
+               (displacements.empty() ||
+                displacements.size() == positions.size()); // 每顶点 3f == positions 长
     }
 };
 
