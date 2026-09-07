@@ -31,14 +31,14 @@
 |---|---|---|---|
 | **0** | 项目骨架：CMake/presets/env/test_native.sh、模块目录、gtest 冒烟 | `cmake --preset native-tests && ctest` 全绿 | ✅ 2026-09-08 |
 | **1** | 核心数学与坐标：WGS84 椭球、Cartographic、Vec3、Mat4、Ray、Rectangle、Transforms(ENU)、ECEF↔cartographic | geodesy/core 单测全绿（赤道/极区/高海拔/负高全覆盖） | ✅ 2026-09-08（见下） |
-| **2** | 可旋转地球：相机模型（位置/朝向）、视线-椭球求交、射线拾取地基、渲染抽象（RenderDevice 接口层，先 host 空实现 + 用例） | 求交/拾取/矩阵单测绿；无 GPU 的帧状态机单测 | ⬜ 下一阶段 |
-| **3** | 单一 XYZ 底图：WebMercator/Geographic tile scheme、瓦片键/四叉树、Provider 接口 + HTTP（先本地 fixture） | scheme/投影/四叉树/提供者单测绿 | ⬜ |
+| **2** | 可旋转地球：相机模型（位置/朝向）、视线-椭球求交、射线拾取地基、渲染抽象（RenderDevice 接口层，先 host 空实现 + 用例） | 求交/拾取/矩阵单测绿；无 GPU 的帧状态机单测 | 🔄 部分（求交已落地，相机/渲染待续） |
+| **3** | 单一 XYZ 底图：WebMercator/Geographic tile scheme、瓦片键/四叉树、Provider 接口 + HTTP（先本地 fixture） | scheme/投影/四叉树/提供者单测绿 | 🔄 部分（投影已落地，scheme/四叉树待续） |
 | **4** | 多图层与多瓦片体系：TMS/XYZ/WMTS 差异、矩形覆盖/交叉、SSE(LOD 几何误差)、调度与预算骨架 | 调度/预算/选择器单测绿 | ⬜ |
 | **5** | 矢量叠加与样式（低优先，先保地形主线） | — | ⬜ |
 | **6** | **地形（最高优先）**：按 terrain.md 判据落地；**并入 gis-md 现成地形服务**；高度图 → 瓦片树 → LOD → 无缝（瓦界 <1m / 换代不可见 / 利用率 ≥1/4 于 T-E1） | terrain 判据表逐条回填 ✅ 需 host 可跑证据；观感类标注 🔒 待用户上屏拍板 | ⬜ |
 | 7–10 | 绘制/测量/编辑、3D Tiles、环境系统、性能离线工程化 | 按需 | ⬜ |
 
-## 2. 阶段 1 已完成内容（2026-09-08）
+## 2. 已完成内容（阶段 1 + 阶段 2/3 前置）
 
 - `src/earth_engine/core/math/`：`MathUtils.h`（常量/角度换算/wrapLongitude/equalsEpsilon）、
   `Vec3.h`、`Mat4.{h,cpp}`（列主序 + Gauss-Jordan 逆）、`Ray.h`、`Rectangle.h`（弧度制）。
@@ -51,6 +51,21 @@
   - **Cartographic 内部一律弧度**，只有 `fromDegrees` 收度 → 度/弧度误用被单测钉住。
   - 高度单位米、可为负（地下）；ENU 帧的 up 与高度无关（大地法线）。
   - `scaleToGeodeticSurface` = 去大地高后的 ECEF（法线垂足），与正/反转换互为精确逆。
+
+### 阶段 2/3 前置增量（2026-09-08）
+
+- `core/math`：新增 `Vec2.h`（平面坐标基础类型，header-only）。
+- `core/geodesy`：
+  - `RayEllipsoid.{h,cpp}`——射线-椭球求交（缩放球二次方程）。入/出双根、起点在球内语义、
+    `firstPositiveT()`（相机/拾取正向第一交点）；判别式噪声容忍用**相对项量级**判据
+    （真实"微小错过"如距表面 1 m 平飞必须判 miss，绝对阈值会把它吞成相切——测试钉住了这条）。
+  - `Projection.{h,cpp}`——`Projection` 接口 + `GeographicProjection`（等距圆柱 x=λa,y=φa）+
+    `WebMercatorProjection`（EPSG:3857，纬度钳制 ±85.05112878°，正方形世界半宽 πa）+
+    北向导数 `northSouthMetersPerRadian`（瓦片地面分辨率/SSE 将来复用）。
+- 单测 +3 套件：`test_vec2` / `test_ray_ellipsoid` / `test_projection`，覆盖
+  直下命中/极区/外切 miss/内部起点/300 km 相机对地命中（相对误差 ≤1e-9）、
+  往返精度、180° 与纬度上限已知值、单调性、有限差分导数互验。当前共 11 套件全绿。
+- 下一步：阶段 2 的相机模型与拾取地基、阶段 3 的瓦片键/四叉树与 Provider。
 
 ## 3. 合并点细节（阶段 6 执行时再展开）
 

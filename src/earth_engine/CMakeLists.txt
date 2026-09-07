@@ -18,6 +18,7 @@ target_include_directories(earth_engine_core PUBLIC
 
 set(MAP_CORE_MATH_SOURCES
     core/math/MathUtils.h
+    core/math/Vec2.h
     core/math/Vec3.h
     core/math/Mat4.h
     core/math/Mat4.cpp
@@ -29,6 +30,10 @@ set(MAP_CORE_GEODESY_SOURCES
     core/geodesy/Cartographic.h
     core/geodesy/Ellipsoid.h
     core/geodesy/Ellipsoid.cpp
+    core/geodesy/RayEllipsoid.h
+    core/geodesy/RayEllipsoid.cpp
+    core/geodesy/Projection.h
+    core/geodesy/Projection.cpp
     core/geodesy/Transforms.h
     core/geodesy/Transforms.cpp
 )

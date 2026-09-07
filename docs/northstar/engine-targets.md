@@ -48,7 +48,8 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 ## 4. 当前状态（2026-09-08）
 
-- 仓库骨架、构建（host native, cmake+ninja+googletest）、8 个 gtest 套件全绿。
-- 已完成：Vec3/Mat4/MathUtils/Ray/Rectangle；Ellipsoid（WGS84 双向转换、法线、地表投影）；
-  Cartographic；Transforms（ENU↔ECEF）。
-- 未开始：瓦片/渲染/地形链路。全部地形判据 ❌（见 terrain.md 跟踪表）。
+- 仓库骨架、构建（host native, cmake+ninja+googletest）、11 个 gtest 套件全绿。
+- 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/Rectangle；Ellipsoid（WGS84 双向转换、法线、地表投影）；
+  Cartographic；Transforms（ENU↔ECEF）；**射线-椭球求交（拾取/相机地基）**；
+  **Geographic/WebMercator 投影（瓦片 scheme 前置）**。
+- 未开始：瓦片键/四叉树、渲染抽象、Provider、地形链路。全部地形判据 ❌（见 terrain.md 跟踪表）。

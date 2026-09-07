@@ -41,5 +41,6 @@ map_cplus/
 
 ## 当前状态（2026-09-08）
 
-阶段 0–1 ✅：骨架 + 核心数学/坐标（Vec3/Mat4/Ray/Rectangle/Ellipsoid/Cartographic/ENU 帧），
-8 个 gtest 套件全绿。下一阶段：可旋转地球的求交/相机/渲染抽象地基。
+阶段 0–1 ✅ + 阶段 2/3 前置 🔄：骨架 + 核心数学/坐标（Vec3/Vec2/Mat4/Ray/Rectangle/Ellipsoid/
+Cartographic/ENU 帧）+ 射线-椭球求交 + Geographic/WebMercator 投影，11 个 gtest 套件全绿。
+下一步：相机模型/拾取地基、瓦片键与四叉树、Provider 接口，逐步逼近阶段 6 地形。
