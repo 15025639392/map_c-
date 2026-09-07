@@ -5,11 +5,11 @@
 > `docs/stage6-a4-host-closeout.md`——继续 A4 前先读它。
 
 ## 现在能跑什么
-- Host：`./test_native.sh` → 43/43 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
+- Host：`./test_native.sh` → 44/44 绿（从 0 自写引擎核心：坐标/投影/瓦片/SSE/选择/高度图/
   PNG/HTTP/网格/查高/缓存/拾取/视锥 + nodata 哨兵语义（A4-B1 首块）+
   同级/跨级共享边审计（SeamAudit）+ 带环源 seam 闭合（B2 切片）+ 祖先回退
   （调度-lite）+ 响应体魔数检查 + 高程基准改正接入路径 + 真实资产字节回归
-  + 装饰器组合端到端（回退×EGM96 配方）+ 五固定机位回归）。
+  + NASA 514 带环源（真实公网端点 z6–12）+ 五固定机位回归）。
 - Android 模拟器观感 demo：`examples/android`（README 有步骤）。
   真 DEM 内置（terrarium，缙云山 z10–13）；五机位 `adb shell setprop debug.mapc.station 1..5`
   + 重启；手势拖动看图；截图 `adb exec-out screencap -p > x.png`。
@@ -42,8 +42,10 @@
    与接入装饰器 `HeightDatumCorrectingDataSource`（host 40 套件含测试）都已落地；
    下载 EGM96 网格（NGA/GeographicLib；本沙箱外网不可达未成）→ 装载文件 → 喂给
    GridHeightDatumCorrector + 装饰器即启用；设备出帧后定默认开关。
-4. **真实网络源**：`CurlBytesSource` host 已通（回环实测）；设备侧接公网 terrarium 需
-   处理模拟器网络/配额（响应体魔数检查已入链），assets 方式已是离线等价。
+4. **真实网络源（host 已接 NASA 514）**：用户指定端点 `https://mapoverlay.xinzhi.space/
+   3dterrain/nasa/tiles/{z}/{x}/{y}.png`（Mapbox Terrain-RGB，514×514 带 1px 环，覆盖
+   z6–12）已 host 全链接通并烟测（MAPC_LIVE_NET=1 跑 test_nasa_ring_source）；
+   设备侧接线（模拟器网络/配额 + demo 数据源切换）与 assets 替代决策为余项。
 
 ## 决策点清单（一句话即可触发）
 - 「station N 的 X 要改」→ 我调 A3.2；

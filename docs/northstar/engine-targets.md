@@ -49,9 +49,9 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 ## 4. 当前状态（2026-09-08）
 
 - 仓库骨架、构建（host native, cmake+ninja+googletest + gis-md vcpkg stb 头 + 系统 libcurl）、
-  43 个 gtest 套件全绿（含固定机位基线 + HTTP 回环 + 帧缓存增量 + nodata 哨兵语义 +
+  44 个 gtest 套件全绿（含固定机位基线 + HTTP 回环 + 帧缓存增量 + nodata 哨兵语义 +
   同级/跨级共享边审计 + 带环源 seam 闭合 + 祖先回退 + 响应体魔数检查 +
-  高程基准改正 + 真实资产字节回归 + 装饰器组合端到端）。
+  高程基准改正 + 真实资产字节回归 + 装饰器组合端到端 + NASA 514 带环源）。
 - 已完成：Vec3/Vec2/Mat4/MathUtils/Ray/RayTriangle/Rectangle；Ellipsoid（WGS84 双向转换、
   法线、地表投影）；Cartographic；Transforms（ENU↔ECEF）；射线-椭球求交；
   Geographic/WebMercator 投影；瓦片键/四叉树 + WebMercatorTileScheme + SSE；
@@ -90,7 +90,7 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 
 | 验收项 | 证据 | 状态 |
 |---|---|---|
-| host native 编译 + 地形相关 gtest 全绿 | `./test_native.sh` 43/43 全绿零告警（复核过）；含地形链路套件（codec/sampler/tile/mesh/frame/selector/pipeline/decode_nodata_semantics/seam_audit/cross_level_tvertex/ring_source_seam/ancestor_fallback/image_tile_body_check/height_datum_correcting_source/terrarium_asset_decode/decorator_composition/五机位回归等） | ✅ |
+| host native 编译 + 地形相关 gtest 全绿 | `./test_native.sh` 44/44 全绿零告警（复核过）；含地形链路套件（codec/sampler/tile/mesh/frame/selector/pipeline/decode_nodata_semantics/seam_audit/cross_level_tvertex/ring_source_seam/nasa_ring_source/ancestor_fallback/image_tile_body_check/height_datum_correcting_source/terrarium_asset_decode/decorator_composition/五机位回归等） | ✅ |
 | Android 模拟器可渲染地形帧并出截图 | `com.mapcplus.terrain` 于 Pixel_7_API_35（GLES3）运行：五固定机位（station1..5 预设）真 terrarium DEM WGS84 ECEF 出帧；`geometry ready` 日志 + 截图 docs/assets/station1..5.png、evidence.md ASCII 包 | ✅ |
 
 观感判据初判（T-V1/T-V6/T-V12…）与 A4 并入（选择性适配 gis-md 服务）为下一步开放项，
@@ -109,7 +109,7 @@ gis-md 的地形北极星是**四轴**形态：体验 / 性能 / 资源占用 / 
 | 渲染抽象 | 2/6 | T-V1~T-V14 观感 | **GPU/平台决策（真机验收）** |
 | 并入 gis-md 现成地形服务 | 6 | 全表回填 | 到"地形阶段"后执行合并点 |
 
-**宿主结论**：机制侧（坐标→网格→缓存）已闭环且 43 套件全绿；观感侧原依赖 GPU 平台
+**宿主结论**：机制侧（坐标→网格→缓存）已闭环且 44 套件全绿；观感侧原依赖 GPU 平台
 与真机——**2026-09-08 用户拍板：观感验证平台 = Android 模拟器（Pixel_7_API_35, GLES 3.0）**。
 里程碑 A0（core 交叉编译 android-arm64）✅：NDK 28.2 preset 构建出 libearth_engine_core.a。
 A1–A4 见 roadmap「Android 模拟器观感路线」；判据状态仍 ❌ 直到模拟器截图 + 用户拍板。

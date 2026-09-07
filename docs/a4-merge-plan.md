@@ -168,3 +168,19 @@
 - 测试（并入 test_cross_level_tvertex）：强曲率 fixture 吸附前 ~7m → 吸附后
   **max < 1e-6 m**（顶点/三角形计数不变）；东/南双轴 4 边都闭合。host 43/43、
   android-arm64 core 编译过。
+
+### 真实带环源接入（2026-09-09，用户指定端点）
+
+- 端点：`https://mapoverlay.xinzhi.space/3dterrain/nasa/tiles/{z}/{x}/{y}.png`，
+  Mapbox Terrain-RGB 标准 **514×514 = 512 cell + 每侧 1px 邻瓦回填裙边**，覆盖 **z6–12**
+  （z13 实测 404）。实测环布局：A.col512 == B.col0 逐行一致（514/514）；z12 中心瓦
+  interior 165–630m 合理。
+- 引擎落地：`TerrainRgbPngTileSource` 新增 **cell-registered 环模式**（请求 gridSize=cells
+  → 期望 PNG (cells+2)²、输出 borderInset=0.5）+ **zoom 范围**（越界 nullopt 不冒充）；
+  `TerrainFrameAssembler` 接受环栅格 (gridSize+2)²；`HeightmapTile` min/max **排除环**
+  （只统计本瓦 cell 区）。最小 PNG writer 提取为 `tests/unit/util/min_png_writer.h` 共享。
+- 测试 `test_nasa_ring_source`：fixture 同构 514 解码 spec / zoom 范围 / 邻瓦帧级
+  SeamAudit≈0 / minmax 环排除；`MAPC_LIVE_NET=1` 跑**真实端点烟测**（z12 瓦 514² 解码 +
+  z13 拒）。host 44/44、真实烟测过（75ms）。
+- 余项：设备侧（demo 数据源切换 / 模拟器网络与配额）；assets（无环）与网络源（带环）
+  并存策略按观感/场景决策。

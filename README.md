@@ -46,8 +46,8 @@ map_cplus/
 
 ## 当前状态（2026-09-09 复核）
 
-**43 个 gtest 套件全绿零告警**（2026-09-09 复核：从零重建/全新 clone 口径 + 真实资产字节回归
-+ 装饰器组合端到端 = 43/43；android-arm64 core 从零重建通过、零告警）。
+**44 个 gtest 套件全绿零告警**（2026-09-09：含 NASA Terrain-RGB **514 带环源**（真实端点
+`mapoverlay.xinzhi.space/3dterrain/nasa/tiles`，z6–12）host 全链 + 真实端点烟测通过）。
 host 地形主链路闭环：相机（脚印/射线/视锥）→
 LOD 选择（SSE+剪枝）→ 数据源（HTTP/PNG/Terrain-RGB）→ 每瓦查高 → 无缝 ECEF 网格 →
 拾取，外加帧缓存增量、同级/跨级共享边审计（`SeamAudit`）、**带重叠环源采样（borderInset, B2）**

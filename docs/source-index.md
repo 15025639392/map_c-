@@ -63,7 +63,7 @@
 | ITileBytesSource | providers/ITileBytesSource.h |
 | TerrainRgbTileSource（RGB 行） | providers/TerrainRgbTileSource.{h,cpp} |
 | StbPngDecoder / decodePngToRgb | providers/StbPngDecoder.{h,cpp} |
-| TerrainRgbPngTileSource（PNG 瓦片） | providers/TerrainRgbPngTileSource.{h,cpp} |
+| TerrainRgbPngTileSource（PNG 瓦片；514 cell-registered 环模式 + zoom 范围） | providers/TerrainRgbPngTileSource.{h,cpp} |
 | CurlBytesSource（HTTP） | providers/CurlBytesSource.{h,cpp} |
 | ImageTileBodyCheck（响应体魔数白名单 PNG/JPEG/WebP） | providers/ImageTileBodyCheck.h |
 
@@ -78,5 +78,6 @@ terrain_cross_level、terrain_picking、
 terrain_frame_cache、decode_nodata_semantics（gis-md 哨兵语义对拍）、
 fixed_station_baseline；
 `camera/`：camera_view、frustum、terrain_camera_pipeline；
-`providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、http_bytes_source、
-terrarium_asset_decode（真实资产字节回归，Terrarium 路径 + T-V5 真数据账本）。
+`providers/`：tile_url_formatter、terrain_rgb_source、png_terrain_source、nasa_ring_source
+（NASA 514 带环源：spec/邻瓦闭合/minmax 环排除 + MAPC_LIVE_NET 真实端点）、
+http_bytes_source、terrarium_asset_decode（真实资产字节回归）。
