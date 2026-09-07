@@ -123,6 +123,11 @@ fn=500+300·sin·cos，重庆 106.44E 29.70N）**：
 
 ---
 
+**模拟器观感证据指针（2026-09-08）**：真 DEM（terrarium，WGS84 ECEF）已上
+Android 模拟器——五固定机位截图 `docs/assets/station1..5.png`、ASCII 证据包
+`docs/assets/evidence.md`。判据 T-V1/T-V6/T-V12（观感）仍为 ❌，**待用户像素拍板**
+（截图已备）；并入 gis-md 服务预案见 `docs/a4-merge-plan.md`。
+
 ## 更新协议（本仓沿用 gis-md 北极星纪律，简版）
 
 - 专项收官 → 改跟踪表状态，**附本仓证据**（commit / 单测 / 计数 / 截图）。
